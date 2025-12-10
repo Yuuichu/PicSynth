@@ -1,0 +1,1837 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Synth: Ultimate Rack (Full Control)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        /* --- 基础布局 --- */
+        body {
+            display: flex;
+            flex-direction: row;
+            background-color: #121212; color: #e0e0e0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0; 
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* 左侧控制面板 - 多列垂直排列 */
+        #left-panel {
+            width: 66.67%;  /* 2/3 屏幕 */
+            height: 100vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            background: linear-gradient(to bottom, #181818, #151515);
+            padding: 15px 12px 15px 15px;
+            box-sizing: border-box;
+            border-right: 2px solid #333;
+            
+            /* CSS Multi-column Layout - 每列独立垂直堆叠 */
+            column-count: 3;
+            column-gap: 12px;
+            column-fill: balance;  /* 平衡各列高度 */
+        }
+        
+        #left-panel::-webkit-scrollbar { width: 8px; }
+        #left-panel::-webkit-scrollbar-track { background: #151515; }
+        #left-panel::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+        #left-panel::-webkit-scrollbar-thumb:hover { background: #555; }
+
+        /* 右侧画布区域 */
+        #right-panel {
+            width: 33.33%;  /* 1/3 屏幕 */
+            height: 100vh;
+            display: flex;
+            justify-content: center; 
+            align-items: center;
+            background-color: #000;
+            position: relative;
+        }
+        
+        #canvas-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 响应式布局 */
+        @media (min-width: 1920px) {
+            #left-panel {
+                width: 70%;
+                padding: 25px;
+                column-gap: 18px;
+            }
+            #right-panel {
+                width: 30%;
+            }
+        }
+
+        @media (min-width: 1400px) and (max-width: 1919px) {
+            #left-panel {
+                width: 66.67%;  /* 2/3 */
+            }
+            #right-panel {
+                width: 33.33%;  /* 1/3 */
+            }
+        }
+
+        @media (min-width: 1000px) and (max-width: 1399px) {
+            #left-panel {
+                width: 65%;
+                column-count: 2;  /* 中等屏幕改为2列 */
+                column-gap: 12px;
+            }
+            #right-panel {
+                width: 35%;
+            }
+        }
+
+        @media (max-width: 999px) {
+            body {
+                flex-direction: column;
+                height: auto;
+            }
+            
+            #left-panel {
+                width: 100%;
+                height: auto;
+                column-count: 1;  /* 小屏幕改为1列 */
+                padding: 15px;
+                column-gap: 10px;
+                border-right: none;
+                border-bottom: 2px solid #333;
+            }
+            
+            #right-panel {
+                width: 100%;
+                height: 50vh;
+                min-height: 400px;
+            }
+        }
+
+        /* --- 控件组样式 --- */
+        .control-section {
+            background: #222; 
+            padding: 8px;
+            border-radius: 5px; 
+            border: 1px solid #333; 
+            position: relative;
+            z-index: 1; 
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            height: fit-content;
+            break-inside: avoid;  /* 防止在列之间断开 */
+            margin-bottom: 10px;  /* 为multi-column添加底部间距 */
+        }
+        
+        .control-section:hover {
+            border-color: #555;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            transform: translateY(-1px);
+        }
+        
+        /* 激活层级提升，防止下拉菜单被遮挡 */
+        .control-section.active-z {
+            z-index: 1000 !important;
+            border-color: #666;
+        }
+        
+        /* 颜色标记不同模块 */
+        .sec-rhythm { border-left: 3px solid #E91E63; }
+        .sec-pitch { border-left: 3px solid #9C27B0; }
+        .sec-fm { border-left: 3px solid #FF9800; }
+        .sec-filter { border-left: 3px solid #2196F3; }
+        .sec-env { border-left: 3px solid #4CAF50; }
+
+        h2 { 
+            margin: 0 0 6px 0; 
+            font-size: 0.8rem; 
+            color: #bbb; 
+            border-bottom: 1px solid #333; 
+            padding-bottom: 4px; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px; 
+            font-weight: 600;
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+        }
+        
+        h3 { 
+            font-size: 0.7rem !important; 
+            margin: 8px 0 5px 0 !important; 
+            padding-bottom: 2px !important;
+        }
+        
+        .control-row { margin-bottom: 5px; display: flex; flex-direction: column; position: relative; }
+        .label-row { display: flex; justify-content: space-between; font-size: 0.7rem; color: #888; margin-bottom: 2px; }
+        .val-display { color: #fff; font-weight: bold; font-family: monospace; font-size: 0.72rem;}
+
+        input[type=range] { width: 100%; cursor: pointer; accent-color: #4CAF50; height: 3px; background: #333; border-radius: 2px; }
+        
+        /* --- 自定义下拉菜单 (Custom Dropdown) --- */
+        .custom-select-wrapper {
+            position: relative;
+            user-select: none;
+            width: 100%;
+        }
+        .custom-select {
+            position: relative;
+            display: flex; flex-direction: column;
+        }
+        .custom-select-trigger {
+            position: relative;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 6px;
+            font-size: 0.75rem;
+            font-weight: 400;
+            color: #fff;
+            background: #333;
+            border: 1px solid #555;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .custom-select-trigger:hover {
+            border-color: #888;
+        }
+        .custom-select-trigger::after {
+            content: '▼'; font-size: 0.6rem; color: #aaa; margin-left: 8px;
+        }
+        
+        .custom-options {
+            position: absolute;
+            display: block;
+            top: 100%; left: 0; right: 0;
+            border: 1px solid #555;
+            border-top: 0;
+            background: #2a2a2a;
+            transition: opacity 0.2s, visibility 0.2s;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            z-index: 2000;
+            border-radius: 0 0 4px 4px;
+            max-height: 250px; overflow-y: auto;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.8);
+        }
+        .custom-select.open .custom-options {
+            opacity: 1; visibility: visible; pointer-events: all;
+        }
+        .custom-option {
+            position: relative;
+            display: block;
+            padding: 6px;
+            font-size: 0.75rem;
+            font-weight: 400;
+            color: #ccc;
+            cursor: pointer;
+            transition: all 0.1s;
+            border-bottom: 1px solid #333;
+        }
+        .custom-option:last-child { border-bottom: none; }
+        .custom-option:hover {
+            color: #fff;
+            background-color: #4CAF50;
+        }
+        .custom-option.selected {
+            color: #fff;
+            background-color: #388E3C;
+        }
+
+        .toggle-container { display: flex; align-items: center; font-size: 0.75rem; color: #ccc;}
+        input[type=checkbox] { margin-right: 5px; cursor: pointer; accent-color: #2196F3; }
+
+        button#startBtn { 
+            width: 100%; padding: 10px; font-weight: bold; 
+            background-color: #4CAF50; color: white; border: none; 
+            border-radius: 4px; cursor: pointer; margin-bottom: 6px; 
+            font-size: 0.85rem; text-transform: uppercase;
+        }
+        button:disabled { background-color: #333; color: #666; cursor: not-allowed; }
+
+        .scale-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; margin-bottom: 6px; max-height: 200px; overflow-y: auto; padding-right: 4px; }
+        .scale-grid::-webkit-scrollbar { width: 4px; }
+        .scale-grid::-webkit-scrollbar-track { background: #181818; }
+        .scale-grid::-webkit-scrollbar-thumb { background: #444; border-radius: 2px; }
+        .scale-btn {
+            background-color: #333; color: #aaa; border: 1px solid #444; padding: 4px;
+            font-size: 0.65rem; cursor: pointer; border-radius: 3px; transition: all 0.2s;
+            text-align: center;
+        }
+        .scale-btn.active { background-color: #4CAF50; color: white; border-color: #4CAF50; font-weight: bold; }
+        .scale-btn.recommended { border-color: #FFC107; color: #eee; box-shadow: inset 0 0 5px rgba(255,193,7,0.2); }
+        .scale-btn.recommended::after { content: ' ★'; color: #FFC107; }
+
+        #mood-display { font-size: 0.7rem; color: #FFC107; margin-bottom: 6px; font-style: italic; min-height: 1em;}
+        
+        #uploadContainer {
+            border: 1px dashed #444;
+            padding: 8px;
+            text-align: center;
+            border-radius: 4px;
+        }
+
+        /* 帮助按钮样式 */
+        .help-link {
+            display: inline-block;
+            margin-top: 6px;
+            padding: 6px 10px;
+            background-color: #2196F3;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            text-align: center;
+            transition: background-color 0.2s;
+        }
+        .help-link:hover {
+            background-color: #1976D2;
+        }
+        .help-link::before {
+            content: '📖 ';
+        }
+
+        @media (max-width: 768px) {
+            #left-panel { 
+                padding: 12px; 
+                column-gap: 10px;
+            }
+            #right-panel { 
+                height: 45vh; 
+                min-height: 350px; 
+            }
+            .control-section {
+                padding: 10px;
+            }
+            h2 {
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="left-panel">
+        <h1 style="column-span: all; margin: 0 0 8px 0; padding: 0 0 8px 0; border-bottom: 2px solid #333; color: #2196F3; font-size: 1.1rem; text-align: center; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700;">
+            🎨 PicSynth Controls
+        </h1>
+        <div class="control-section">
+            <h2>System Control</h2>
+            <button id="startBtn">启动音序器 (Initialize)</button>
+            <div id="uploadContainer" style="opacity: 0.5; pointer-events: none;">
+                <input type="file" id="imgUpload" accept="image/*" style="font-size: 0.8rem; color: #aaa; width: 100%;">
+            </div>
+            <div style="text-align:center; color:#555; font-size:0.7rem; margin-top:5px;" id="statusText">等待启动...</div>
+            <a href="Doc.html" target="_blank" class="help-link" style="width: 100%; display: block; box-sizing: border-box; margin-top: 8px;">查看使用教程 / User Guide</a>
+        </div>
+
+        <div class="control-section sec-rhythm">
+            <h2>Rhythm & Sequencer</h2>
+            <div class="control-row">
+                <div class="label-row"><span>BPM (速度)</span><span id="v-bpm" class="val-display">120</span></div>
+                <input type="range" id="s-bpm" min="40" max="300" value="120" step="1">
+            </div>
+            <div class="control-row">
+                <div class="label-row">
+                    <span>Note Duration Scale</span>
+                    <span id="v-dur-scale" class="val-display">4 (1/4 Note)</span>
+                </div>
+                <input type="range" id="s-dur-scale" min="1" max="16" value="4" step="1">
+            </div>
+        </div>
+        <div class="control-section">
+            <h2>Global Settings (全局设置)</h2>
+             <div class="control-row">
+                <div class="label-row"><span>Grid Size (网格分辨率)</span><span id="v-grid" class="val-display">16</span></div>
+                <input type="range" id="s-grid" min="4" max="64" value="16" step="1">
+            </div>
+        </div>
+
+        <div class="control-section sec-pitch">
+            <h2>Pitch & Scale</h2>
+            <div id="mood-display">请上传图片进行分析...</div>
+            <div class="scale-grid" id="scale-buttons-container"></div>
+            
+            <div class="control-row">
+                <div class="label-row"><span>Base Octave</span><span id="v-oct" class="val-display">4</span></div>
+                <input type="range" id="s-oct" min="2" max="6" value="4" step="1">
+            </div>
+            <div class="control-row">
+                <div class="label-row"><span>Randomness (Humanize)</span><span id="v-rand" class="val-display">0.5</span></div>
+                <input type="range" id="s-rand" min="0" max="1.0" value="0.5" step="0.05">
+            </div>
+        </div>
+        
+
+        <div class="control-section sec-fm">
+            <h2>FM Synthesis Core (FM合成核心)</h2>
+            
+            <h3 style="font-size: 0.75rem; color: #FF9800; margin: 15px 0 8px 0; border-bottom: 1px solid #444; padding-bottom: 3px;">Oscillators (振荡器)</h3>
+            <div class="control-row">
+                <div class="label-row"><span>Carrier Oscillator (载波)</span></div>
+                <div class="custom-select-wrapper" id="wrapper-sel-osc">
+                    <div class="custom-select">
+                        <div class="custom-select-trigger" id="trigger-sel-osc">Sine (圆润)</div>
+                        <div class="custom-options">
+                            <span class="custom-option selected" data-value="sine">Sine (圆润)</span>
+                            <span class="custom-option" data-value="triangle">Triangle (明亮)</span>
+                            <span class="custom-option" data-value="square">Square (8-bit)</span>
+                            <span class="custom-option" data-value="sawtooth">Sawtooth (尖锐)</span>
+                            <span class="custom-option" data-value="pwm">PWM (方波脉冲)</span>
+                            <span class="custom-option" data-value="fatsawtooth">Super Saw (厚实)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="control-row">
+                <div class="label-row"><span>Modulator Oscillator (调制波)</span></div>
+                <div class="custom-select-wrapper" id="wrapper-sel-modosc">
+                    <div class="custom-select">
+                        <div class="custom-select-trigger" id="trigger-sel-modosc">Sine (标准)</div>
+                        <div class="custom-options">
+                            <span class="custom-option selected" data-value="sine">Sine (标准)</span>
+                            <span class="custom-option" data-value="triangle">Triangle (尖锐)</span>
+                            <span class="custom-option" data-value="square">Square (数字感)</span>
+                            <span class="custom-option" data-value="sawtooth">Sawtooth (金属感)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <h3 style="font-size: 0.75rem; color: #FF9800; margin: 15px 0 8px 0; border-bottom: 1px solid #444; padding-bottom: 3px;">FM Parameters (FM参数)</h3>
+            <div class="control-row">
+                <div class="label-row"><span>Harmonicity (谐波比)</span><span id="v-harm" class="val-display">1.0</span></div>
+                <input type="range" id="s-harm" min="0.1" max="10.0" value="1.0" step="0.1">
+            </div>
+            <div class="control-row">
+                <div class="label-row"><span>Base Mod Index (基础调制)</span><span id="v-modidx" class="val-display">10</span></div>
+                <input type="range" id="s-modidx" min="0" max="50" value="10" step="0.5">
+            </div>
+            <div class="control-row">
+                <div class="label-row"><span>Mod Scale (动态范围)</span><span id="v-mod" class="val-display">20</span></div>
+                <input type="range" id="s-mod" min="0" max="200" value="20" step="1">
+            </div>
+            <div class="control-row">
+                <div class="label-row"><span>Mod Threshold (阈值)</span><span id="v-mod-th" class="val-display">10</span></div>
+                <input type="range" id="s-mod-th" min="0" max="100" value="10" step="1">
+            </div>
+            <div class="control-row">
+                <div class="label-row"><span>Detune (失谐 cents)</span><span id="v-detune" class="val-display">0</span></div>
+                <input type="range" id="s-detune" min="-100" max="100" value="0" step="1">
+            </div>
+            
+            <h3 style="font-size: 0.75rem; color: #FF9800; margin: 15px 0 8px 0; border-bottom: 1px solid #444; padding-bottom: 3px;">Modulation Envelope (调制包络)</h3>
+            <div class="control-row">
+                <div class="label-row"><span>Attack</span><span id="v-matt" class="val-display">0.01</span></div>
+                <input type="range" id="s-matt" min="0.001" max="2.0" value="0.01" step="0.001">
+            </div>
+            <div class="control-row">
+                <div class="label-row"><span>Decay</span><span id="v-mdec" class="val-display">0.2</span></div>
+                <input type="range" id="s-mdec" min="0.01" max="2.0" value="0.2" step="0.01">
+            </div>
+            <div class="control-row">
+                <div class="label-row"><span>Sustain</span><span id="v-msus" class="val-display">0.1</span></div>
+                <input type="range" id="s-msus" min="0" max="1.0" value="0.1" step="0.05">
+            </div>
+            <div class="control-row">
+                <div class="label-row"><span>Release</span><span id="v-mrel" class="val-display">0.5</span></div>
+                <input type="range" id="s-mrel" min="0.1" max="5.0" value="0.5" step="0.1">
+            </div>
+        </div>
+
+        <div class="control-section sec-filter">
+            <h2>Filters & EQ (滤波器与均衡)</h2>
+            
+            <h3 style="font-size: 0.75rem; color: #2196F3; margin: 10px 0 8px 0; border-bottom: 1px solid #444; padding-bottom: 3px;">
+                Filter A - Shaper (主塑形滤波器)
+                <label class="toggle-container" style="float: right;"><input type="checkbox" id="chk-f1-en" checked> Enable</label>
+            </h3>
+            <div class="control-row">
+                <div class="label-row"><span>Type</span></div>
+                <div class="custom-select-wrapper" id="wrapper-sel-f1-type">
+                    <div class="custom-select">
+                        <div class="custom-select-trigger" id="trigger-sel-f1-type">Lowpass (变暗)</div>
+                        <div class="custom-options">
+                            <span class="custom-option selected" data-value="lowpass">Lowpass (变暗)</span>
+                            <span class="custom-option" data-value="highpass">Highpass (变薄)</span>
+                            <span class="custom-option" data-value="peaking">Peaking (突出频点)</span>
+                            <span class="custom-option" data-value="notch">Notch (切除频点)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="control-row">
+                <div class="label-row"><span>Freq (Hz)</span><span id="v-f1-freq" class="val-display">2000</span></div>
+                <input type="range" id="s-f1-freq" min="50" max="10000" value="2000" step="50">
+            </div>
+            <div class="control-row">
+                <div class="label-row"><span>Q (Resonance)</span><span id="v-f1-q" class="val-display">1.0</span></div>
+                <input type="range" id="s-f1-q" min="0.1" max="20.0" value="1.0" step="0.1">
+            </div>
+            <div class="control-row">
+                <div class="label-row"><span>Gain (dB)</span><span id="v-f1-gain" class="val-display">0</span></div>
+                <input type="range" id="s-f1-gain" min="-24" max="24" value="0" step="1">
+            </div>
+            
+            <h3 style="font-size: 0.75rem; color: #2196F3; margin: 15px 0 8px 0; border-bottom: 1px solid #444; padding-bottom: 3px;">
+                Filter B - EQ Point (辅助均衡)
+                <label class="toggle-container" style="float: right;"><input type="checkbox" id="chk-f2-en" checked> Enable</label>
+            </h3>
+            <div class="control-row">
+                <div class="label-row"><span>Type</span></div>
+                <div class="custom-select-wrapper" id="wrapper-sel-f2-type">
+                    <div class="custom-select">
+                        <div class="custom-select-trigger" id="trigger-sel-f2-type">Peaking (突出频点)</div>
+                        <div class="custom-options">
+                            <span class="custom-option" data-value="lowpass">Lowpass (变暗)</span>
+                            <span class="custom-option" data-value="highpass">Highpass (变薄)</span>
+                            <span class="custom-option selected" data-value="peaking">Peaking (突出频点)</span>
+                            <span class="custom-option" data-value="notch">Notch (切除频点)</span>
+                            <span class="custom-option" data-value="lowshelf">Lowshelf (低频架)</span>
+                            <span class="custom-option" data-value="highshelf">Highshelf (高频架)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="control-row">
+                <div class="label-row"><span>Freq (Hz)</span><span id="v-f2-freq" class="val-display">500</span></div>
+                <input type="range" id="s-f2-freq" min="50" max="5000" value="500" step="50">
+            </div>
+            <div class="control-row">
+                <div class="label-row"><span>Q (Resonance)</span><span id="v-f2-q" class="val-display">2.0</span></div>
+                <input type="range" id="s-f2-q" min="0.1" max="10.0" value="2.0" step="0.1">
+            </div>
+            <div class="control-row">
+                <div class="label-row"><span>Gain (dB)</span><span id="v-f2-gain" class="val-display">6</span></div>
+                <input type="range" id="s-f2-gain" min="-24" max="24" value="6" step="1">
+            </div>
+        </div>
+
+        <div class="control-section sec-env">
+            <h2>Amp Envelope (振幅包络)</h2>
+            <div class="control-row">
+                <div class="label-row"><span>Attack</span><span id="v-att" class="val-display">0.01</span></div>
+                <input type="range" id="s-att" min="0.001" max="2.0" value="0.01" step="0.001">
+            </div>
+            <div class="control-row">
+                <div class="label-row"><span>Decay</span><span id="v-dec" class="val-display">0.1</span></div>
+                <input type="range" id="s-dec" min="0.01" max="1.0" value="0.1" step="0.01">
+            </div>
+            <div class="control-row">
+                <div class="label-row"><span>Sustain</span><span id="v-sus" class="val-display">0.1</span></div>
+                <input type="range" id="s-sus" min="0" max="1.0" value="0.1" step="0.05">
+            </div>
+            <div class="control-row">
+                <div class="label-row"><span>Release</span><span id="v-rel" class="val-display">0.5</span></div>
+                <input type="range" id="s-rel" min="0.1" max="5.0" value="0.5" step="0.1">
+            </div>
+        </div>
+
+        <div class="control-section" style="border-left: 3px solid #9C27B0;">
+            <h2>Effects (效果器)</h2>
+            <div class="control-row">
+                <div class="label-row"><span>Reverb Wet (混响)</span><span id="v-rvw" class="val-display">0.3</span></div>
+                <input type="range" id="s-rvw" min="0" max="1.0" value="0.3" step="0.05">
+            </div>
+        </div>
+
+        <div class="control-section sec-bass" style="border-left: 3px solid #00BCD4;">
+            <h2>
+                Bass Line (低音线)
+                <label class="toggle-container"><input type="checkbox" id="chk-bass-en" checked> Enable</label>
+            </h2>
+            
+            <h3 style="font-size: 0.75rem; color: #00BCD4; margin: 8px 0 6px 0; border-bottom: 1px solid #444; padding-bottom: 2px;">Pitch (音高)</h3>
+            <div class="control-row">
+                <div class="label-row"><span>Pitch Offset (音高偏移 半音)</span><span id="v-bass-pitch" class="val-display">-12</span></div>
+                <input type="range" id="s-bass-pitch" min="-36" max="-12" value="-12" step="1">
+            </div>
+            
+            <h3 style="font-size: 0.75rem; color: #00BCD4; margin: 10px 0 6px 0; border-bottom: 1px solid #444; padding-bottom: 2px;">Behavior (行为特征)</h3>
+            <div class="control-row">
+                <div class="label-row"><span>Trigger Probability (触发概率)</span><span id="v-bass-prob" class="val-display">0.7</span></div>
+                <input type="range" id="s-bass-prob" min="0" max="1.0" value="0.7" step="0.05">
+            </div>
+            <div class="control-row">
+                <div class="label-row"><span>Root Emphasis (根音倾向)</span><span id="v-bass-root" class="val-display">0.4</span></div>
+                <input type="range" id="s-bass-root" min="0" max="1.0" value="0.4" step="0.05">
+            </div>
+            <div class="control-row">
+                <div class="label-row"><span>Randomness (随机性)</span><span id="v-bass-rand" class="val-display">0.3</span></div>
+                <input type="range" id="s-bass-rand" min="0" max="1.0" value="0.3" step="0.05">
+            </div>
+            <div class="control-row">
+                <div class="label-row"><span>Silence Threshold (静音阈值)</span><span id="v-bass-silence" class="val-display">15</span></div>
+                <input type="range" id="s-bass-silence" min="0" max="50" value="15" step="1">
+            </div>
+            
+            <h3 style="font-size: 0.75rem; color: #00BCD4; margin: 10px 0 6px 0; border-bottom: 1px solid #444; padding-bottom: 2px;">Timbre (音色)</h3>
+            <div class="control-row">
+                <div class="label-row"><span>Note Duration Scale (时长比例)</span><span id="v-bass-dur" class="val-display">2</span></div>
+                <input type="range" id="s-bass-dur" min="1" max="8" value="2" step="1">
+            </div>
+            <div class="control-row">
+                <div class="label-row"><span>Filter Cutoff (Hz)</span><span id="v-bass-cut" class="val-display">800</span></div>
+                <input type="range" id="s-bass-cut" min="200" max="2000" value="800" step="50">
+            </div>
+            <div class="control-row">
+                <div class="label-row"><span>Volume</span><span id="v-bass-vol" class="val-display">0.7</span></div>
+                <input type="range" id="s-bass-vol" min="0" max="1.0" value="0.7" step="0.05">
+            </div>
+        </div>
+
+        <div class="control-section sec-drums" style="border-left: 3px solid #FFC107;">
+            <h2>
+                Drum Machine (鼓组)
+                <label class="toggle-container"><input type="checkbox" id="chk-drums-en" checked> Enable</label>
+            </h2>
+            
+            <!-- Presets -->
+            <div class="control-row">
+                <div class="label-row"><span>Preset (预设)</span></div>
+                <div class="custom-select-wrapper" id="wrapper-sel-drum-preset">
+                    <div class="custom-select">
+                        <div class="custom-select-trigger" id="trigger-sel-drum-preset">Balanced (平衡)</div>
+                        <div class="custom-options">
+                            <span class="custom-option selected" data-value="balanced">Balanced (平衡)</span>
+                            <span class="custom-option" data-value="aggressive">Aggressive (激进)</span>
+                            <span class="custom-option" data-value="sparse">Sparse (稀疏)</span>
+                            <span class="custom-option" data-value="dense">Dense (密集)</span>
+                            <span class="custom-option" data-value="ambient">Ambient (环境)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Kick -->
+            <h3 style="font-size: 0.75rem; color: #FFC107; margin: 8px 0 6px 0; border-bottom: 1px solid #444; padding-bottom: 2px;">
+                Kick (底鼓)
+            </h3>
+            <div>
+                <div class="control-row">
+                    <div class="label-row"><span>Probability (触发概率)</span><span id="v-kick-prob" class="val-display">0.15</span></div>
+                    <input type="range" id="s-kick-prob" min="0" max="1.0" value="0.15" step="0.01">
+                </div>
+                <div class="control-row">
+                    <div class="label-row"><span>Brightness Threshold (亮度阈值)</span><span id="v-kick-thresh" class="val-display">30</span></div>
+                    <input type="range" id="s-kick-thresh" min="0" max="100" value="30" step="1">
+                </div>
+                <div class="control-row">
+                    <div class="label-row"><span>Volume</span><span id="v-kick-vol" class="val-display">1.0</span></div>
+                    <input type="range" id="s-kick-vol" min="0" max="1.0" value="1.0" step="0.05">
+                </div>
+            </div>
+            
+            <!-- Snare -->
+            <h3 style="font-size: 0.75rem; color: #FFC107; margin: 10px 0 6px 0; border-bottom: 1px solid #444; padding-bottom: 2px;">
+                Snare (军鼓)
+            </h3>
+            <div>
+                <div class="control-row">
+                    <div class="label-row"><span>Probability (触发概率)</span><span id="v-snare-prob" class="val-display">0.12</span></div>
+                    <input type="range" id="s-snare-prob" min="0" max="1.0" value="0.12" step="0.01">
+                </div>
+                <div class="control-row">
+                    <div class="label-row"><span>Saturation Threshold (饱和度阈值)</span><span id="v-snare-thresh" class="val-display">40</span></div>
+                    <input type="range" id="s-snare-thresh" min="0" max="100" value="40" step="1">
+                </div>
+                <div class="control-row">
+                    <div class="label-row"><span>Volume</span><span id="v-snare-vol" class="val-display">0.8</span></div>
+                    <input type="range" id="s-snare-vol" min="0" max="1.0" value="0.8" step="0.05">
+                </div>
+            </div>
+            
+            <!-- Hi-hat -->
+            <h3 style="font-size: 0.75rem; color: #FFC107; margin: 10px 0 6px 0; border-bottom: 1px solid #444; padding-bottom: 2px;">
+                Hi-hat (踩镲)
+            </h3>
+            <div>
+                <div class="control-row">
+                    <div class="label-row"><span>Probability (触发概率)</span><span id="v-hihat-prob" class="val-display">0.5</span></div>
+                    <input type="range" id="s-hihat-prob" min="0" max="1.0" value="0.5" step="0.01">
+                </div>
+                <div class="control-row">
+                    <div class="label-row"><span>Density (密度调节)</span><span id="v-hihat-dens" class="val-display">0.5</span></div>
+                    <input type="range" id="s-hihat-dens" min="0" max="1.0" value="0.5" step="0.05">
+                </div>
+                <div class="control-row">
+                    <div class="label-row"><span>Volume</span><span id="v-hihat-vol" class="val-display">0.6</span></div>
+                    <input type="range" id="s-hihat-vol" min="0" max="1.0" value="0.6" step="0.05">
+                </div>
+            </div>
+            
+            <!-- Tom -->
+            <h3 style="font-size: 0.75rem; color: #FFC107; margin: 10px 0 6px 0; border-bottom: 1px solid #444; padding-bottom: 2px;">
+                Tom (通鼓)
+            </h3>
+            <div>
+                <div class="control-row">
+                    <div class="label-row"><span>Probability (触发概率)</span><span id="v-tom-prob" class="val-display">0.08</span></div>
+                    <input type="range" id="s-tom-prob" min="0" max="1.0" value="0.08" step="0.01">
+                </div>
+                <div class="control-row">
+                    <div class="label-row"><span>Hue Range Min (色相范围最小)</span><span id="v-tom-hue-min" class="val-display">60</span></div>
+                    <input type="range" id="s-tom-hue-min" min="0" max="360" value="60" step="1">
+                </div>
+                <div class="control-row">
+                    <div class="label-row"><span>Hue Range Max (色相范围最大)</span><span id="v-tom-hue-max" class="val-display">180</span></div>
+                    <input type="range" id="s-tom-hue-max" min="0" max="360" value="180" step="1">
+                </div>
+                <div class="control-row">
+                    <div class="label-row"><span>Pitch by Hue (色相影响音高)</span></div>
+                    <label class="toggle-container"><input type="checkbox" id="chk-tom-pitch" checked></label>
+                </div>
+                <div class="control-row">
+                    <div class="label-row"><span>Volume</span><span id="v-tom-vol" class="val-display">0.7</span></div>
+                    <input type="range" id="s-tom-vol" min="0" max="1.0" value="0.7" step="0.05">
+                </div>
+            </div>
+        </div>
+
+        
+    </div>
+
+    <div id="right-panel">
+        <div id="canvas-container"></div>
+    </div>
+
+<script>
+    // --- 1. 数据定义 ---
+    const SCALES = {
+        // 基础音阶
+        pentatonic: { name: "Pentatonic (五声)", notes: [0, 2, 4, 7, 9] },
+        major:      { name: "Major (大调)", notes: [0, 2, 4, 5, 7, 9, 11] },
+        minor:      { name: "Minor (小调)", notes: [0, 2, 3, 5, 7, 8, 10] },
+        
+        // 调式音阶 (Modes)
+        dorian:     { name: "Dorian (多利亚)", notes: [0, 2, 3, 5, 7, 9, 10] },
+        phrygian:   { name: "Phrygian (弗里吉亚)", notes: [0, 1, 3, 5, 7, 8, 10] },
+        lydian:     { name: "Lydian (利底亚)", notes: [0, 2, 4, 6, 7, 9, 11] },
+        mixolydian: { name: "Mixolydian (混合利底亚)", notes: [0, 2, 4, 5, 7, 9, 10] },
+        locrian:    { name: "Locrian (洛克里亚)", notes: [0, 1, 3, 5, 6, 8, 10] },
+        
+        // 特殊小调
+        harmonicMinor: { name: "Harmonic Minor (和声小调)", notes: [0, 2, 3, 5, 7, 8, 11] },
+        melodicMinor:  { name: "Melodic Minor (旋律小调)", notes: [0, 2, 3, 5, 7, 9, 11] },
+        
+        // 东方/异域音阶
+        japanese:   { name: "Japanese (日本)", notes: [0, 1, 5, 7, 8] },
+        arabic:     { name: "Arabic (阿拉伯)", notes: [0, 1, 4, 5, 7, 8, 11] },
+        gypsy:      { name: "Gypsy (吉普赛)", notes: [0, 2, 3, 6, 7, 8, 11] },
+        
+        // 现代/爵士音阶
+        blues:      { name: "Blues (布鲁斯)", notes: [0, 3, 5, 6, 7, 10] },
+        whole:      { name: "Whole Tone (全音)", notes: [0, 2, 4, 6, 8, 10] },
+        chromatic:  { name: "Chromatic (半音)", notes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] },
+        
+        // 五声音阶变体
+        minorPenta: { name: "Minor Pentatonic (小调五声)", notes: [0, 3, 5, 7, 10] },
+        egyptian:   { name: "Egyptian (埃及)", notes: [0, 2, 5, 7, 10] }
+    };
+
+    // 默认参数 State
+    const params = {
+        gridSize: 16, bpm: 120, 
+        maxDurSteps: 4, 
+        scaleType: 'pentatonic', baseOctave: 4, randomness: 0.5,
+        
+        // FM 合成器参数
+        harmonicity: 1.0, 
+        modScale: 20, 
+        modThreshold: 10, 
+        modulationIndex: 10, 
+        detune: 0,
+        oscType: 'sine',
+        modOscType: 'sine',
+        
+        // Filter 1 (Main)
+        f1: { on: true, type: 'lowpass', freq: 2000, q: 1.0, gain: 0 },
+        // Filter 2 (可选类型)
+        f2: { on: true, type: 'peaking', freq: 500, q: 2.0, gain: 6 },
+        
+        // 包络参数
+        amp: { a: 0.01, d: 0.1, s: 0.1, r: 0.5 },
+        modEnv: { a: 0.01, d: 0.2, s: 0.1, r: 0.5 },
+        
+        reverb: { wet: 0.3 },
+        
+        // === Bass 参数 ===
+        bass: {
+            enabled: true,
+            pitchOffset: -12,          // 半音偏移（-36到-12，即-3到-1个八度）
+            triggerProbability: 0.7,   // 触发概率（0-1）
+            rootEmphasis: 0.4,         // 根音倾向（0=完全自由，1=只有根音/五度）
+            randomness: 0.3,           // Bass独立的随机性
+            maxDurSteps: 2,            // Bass独立的音符时长上限
+            silenceThreshold: 15,      // 亮度低于此值=静音
+            cutoff: 800,               // 低通滤波器
+            volume: 0.7
+        },
+        
+        // === 鼓组参数 ===
+        drums: {
+            enabled: true,
+            
+            kick: {
+                probability: 0.15,
+                brightnessThreshold: 30,
+                volume: 1.0
+            },
+            
+            snare: {
+                probability: 0.12,
+                saturationThreshold: 40,
+                volume: 0.8
+            },
+            
+            hihat: {
+                probability: 0.5,
+                density: 0.5,
+                volume: 0.6
+            },
+            
+            tom: {
+                probability: 0.08,
+                hueRangeMin: 60,
+                hueRangeMax: 180,
+                pitchByHue: true,
+                volume: 0.7
+            }
+        }
+    };
+
+    let img = null, gridData = [];
+    let polySynth = null, filter1 = null, filter2 = null, reverb = null, limiter = null;
+    let bassSynth = null, kickDrum = null, snareDrum = null, hihat = null, tomDrum = null;
+    let bassFilter = null;
+    let isPlaying = false, isAudioInitialized = false;
+    let recommendedScales = [];
+    let currentGridIndex = 0; 
+    let ticksWaited = 0;      
+    let currentNoteDuration = 0; 
+
+    // --- 2. p5.js Setup ---
+    function setup() {
+        const container = document.getElementById('canvas-container');
+        let cnv = createCanvas(600, 600);
+        cnv.parent('canvas-container');
+        background(20);
+        initScaleButtons();
+        setupUI();
+        cnv.mousePressed(() => { 
+            if (isAudioInitialized && img) togglePlay();
+        });
+        noStroke();
+    }
+
+    function togglePlay() {
+        if (isPlaying) {
+            Tone.Transport.pause();
+            isPlaying = false;
+            document.getElementById('statusText').innerText = 'PAUSED';
+        } else {
+            Tone.Transport.start();
+            isPlaying = true;
+            document.getElementById('statusText').innerText = 'PLAYING...';
+        }
+    }
+
+    // --- 3. 氛围分析与视觉处理 ---
+    function analyzeAtmosphere() {
+        if(!img) return;
+        img.loadPixels();
+        
+        // === 1. 计算图片整体特征 ===
+        let r=0, g=0, b=0, count=0;
+        let minL=100, maxL=0, avgL=0, avgS=0, avgH=0;
+        let hueDistribution = {}; // 统计色相分布
+        
+        for(let i=0; i<img.pixels.length; i+=100) { 
+            r+=img.pixels[i]; 
+            g+=img.pixels[i+1]; 
+            b+=img.pixels[i+2]; 
+            
+            let c = color(img.pixels[i], img.pixels[i+1], img.pixels[i+2]);
+            let h = hue(c), s = saturation(c), l = lightness(c);
+            
+            avgL += l;
+            avgS += s;
+            avgH += h;
+            
+            if(l < minL) minL = l;
+            if(l > maxL) maxL = l;
+            
+            let hueZone = Math.floor(h / 30); // 12个色相区域
+            hueDistribution[hueZone] = (hueDistribution[hueZone] || 0) + 1;
+            
+            count++;
+        }
+        
+        r/=count; g/=count; b/=count;
+        avgL/=count; avgS/=count; avgH/=count;
+        
+        let contrast = maxL - minL; // 对比度
+        let c = color(r, g, b); 
+        let h = hue(c), s = saturation(c), l = lightness(c);
+        
+        // 计算色相多样性
+        let hueVariety = Object.keys(hueDistribution).length;
+        
+        // === 2. 推荐音阶 ===
+        recommendedScales = [];
+        let mood = "均势";
+        
+        if (l < 25) { 
+            recommendedScales.push('minor', 'harmonicMinor', 'phrygian', 'locrian', 'chromatic'); 
+            mood = "黑暗/压抑"; 
+        } 
+        else if (s < 20) { 
+            recommendedScales.push('minor', 'dorian', 'egyptian'); 
+            mood = "冷淡/中性"; 
+        } 
+        else if ((h >= 0 && h < 60) || h > 330) { 
+            recommendedScales.push('major', 'pentatonic', 'lydian', 'mixolydian'); 
+            mood = "温暖/活力"; 
+        } 
+        else if (h >= 60 && h < 160) { 
+            recommendedScales.push('major', 'japanese', 'pentatonic'); 
+            mood = "明亮/清新"; 
+        }
+        else if (h >= 160 && h < 260) { 
+            recommendedScales.push('minor', 'dorian', 'blues', 'minorPenta'); 
+            mood = "冷静/忧郁"; 
+        } 
+        else if (h >= 260 && h <= 330) { 
+            recommendedScales.push('whole', 'lydian', 'gypsy', 'arabic'); 
+            mood = "梦幻/神秘"; 
+        }
+        else if (l > 80) {
+            recommendedScales.push('whole', 'lydian', 'major');
+            mood = "空灵/明亮";
+        }
+        else { 
+            recommendedScales.push('pentatonic', 'major'); 
+        }
+        
+        // === 3. 智能参数预设（带随机性）===
+        applyIntelligentPreset(avgL, avgS, avgH, contrast, hueVariety, mood);
+        
+        document.getElementById('mood-display').innerText = "氛围分析: " + mood;
+        updateScaleButtonsUI();
+    }
+    
+    // === 智能预设系统 ===
+    function applyIntelligentPreset(avgL, avgS, avgH, contrast, hueVariety, mood) {
+        // 添加随机因子（每次加载同一图片会有轻微变化）
+        let rand = () => Math.random() * 0.2 - 0.1; // -0.1 to 0.1
+        let randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+        
+        // === 1. BPM（根据亮度和对比度）===
+        let bpm = 120;
+        if (avgL < 30) {
+            bpm = randInt(60, 90); // 暗图 → 慢速
+        } else if (avgL > 70) {
+            bpm = randInt(110, 140); // 亮图 → 快速
+        } else {
+            bpm = randInt(90, 120); // 中等
+        }
+        
+        if (contrast > 60) bpm += randInt(10, 20); // 高对比度 → 更快
+        
+        params.bpm = bpm;
+        document.getElementById('s-bpm').value = bpm;
+        document.getElementById('v-bpm').innerText = bpm;
+        if(isAudioInitialized) Tone.Transport.bpm.value = bpm;
+        
+        // === 2. 音阶（从推荐中随机选择）===
+        if (recommendedScales.length > 0) {
+            let randomScale = recommendedScales[Math.floor(Math.random() * recommendedScales.length)];
+            params.scaleType = randomScale;
+        }
+        
+        // === 3. Randomness（根据饱和度和色相多样性）===
+        let randomness = 0.5;
+        if (avgS < 20) {
+            randomness = 0.2 + rand(); // 低饱和度 → 低随机性
+        } else if (hueVariety > 8) {
+            randomness = 0.6 + rand(); // 高色相多样性 → 高随机性
+        } else {
+            randomness = 0.4 + rand();
+        }
+        randomness = Math.max(0, Math.min(1, randomness));
+        
+        params.randomness = parseFloat(randomness.toFixed(2));
+        document.getElementById('s-rand').value = params.randomness;
+        document.getElementById('v-rand').innerText = params.randomness;
+        
+        // === 4. Note Duration Scale（根据对比度）===
+        let durScale = 4;
+        if (contrast < 30) {
+            durScale = randInt(6, 10); // 低对比度 → 长音符
+        } else if (contrast > 60) {
+            durScale = randInt(2, 4); // 高对比度 → 短音符
+        } else {
+            durScale = randInt(4, 6);
+        }
+        
+        params.maxDurSteps = durScale;
+        document.getElementById('s-dur-scale').value = durScale;
+        document.getElementById('v-dur-scale').innerText = `${durScale} (${durScale}/16)`;
+        
+        // === 5. 鼓组预设（根据氛围）===
+        let drumPreset = 'balanced';
+        if (avgL < 30) {
+            drumPreset = Math.random() < 0.5 ? 'sparse' : 'ambient';
+        } else if (avgL > 70 && avgS > 50) {
+            drumPreset = Math.random() < 0.5 ? 'aggressive' : 'dense';
+        } else if (avgS < 20) {
+            drumPreset = 'ambient';
+        } else {
+            drumPreset = Math.random() < 0.7 ? 'balanced' : 'sparse';
+        }
+        
+        applyDrumPreset(drumPreset);
+        // 更新UI
+        document.querySelectorAll('#wrapper-sel-drum-preset .custom-option').forEach(opt => {
+            opt.classList.remove('selected');
+            if(opt.getAttribute('data-value') === drumPreset) {
+                opt.classList.add('selected');
+                document.getElementById('trigger-sel-drum-preset').textContent = opt.textContent;
+            }
+        });
+        
+        // === 6. Bass参数（根据亮度）===
+        let bassTriggerProb = 0.7;
+        let bassRootEmphasis = 0.4;
+        
+        if (avgL < 30) {
+            bassTriggerProb = 0.4 + rand(); // 暗图 → 稀疏Bass
+            bassRootEmphasis = 0.6 + rand(); // 更强调根音
+        } else if (avgL > 70) {
+            bassTriggerProb = 0.8 + rand(); // 亮图 → 密集Bass
+            bassRootEmphasis = 0.3 + rand(); // 更自由
+        } else {
+            bassTriggerProb = 0.6 + rand();
+            bassRootEmphasis = 0.4 + rand();
+        }
+        
+        params.bass.triggerProbability = parseFloat(Math.max(0, Math.min(1, bassTriggerProb)).toFixed(2));
+        params.bass.rootEmphasis = parseFloat(Math.max(0, Math.min(1, bassRootEmphasis)).toFixed(2));
+        
+        document.getElementById('s-bass-prob').value = params.bass.triggerProbability;
+        document.getElementById('v-bass-prob').innerText = params.bass.triggerProbability;
+        document.getElementById('s-bass-root').value = params.bass.rootEmphasis;
+        document.getElementById('v-bass-root').innerText = params.bass.rootEmphasis;
+        
+        // === 7. Reverb（根据饱和度和亮度）===
+        let reverbWet = 0.3;
+        if (avgS < 20 || avgL > 75) {
+            reverbWet = 0.4 + rand(); // 低饱和度或高亮度 → 更多混响
+        } else if (avgS > 60) {
+            reverbWet = 0.2 + rand(); // 高饱和度 → 更干
+        } else {
+            reverbWet = 0.3 + rand();
+        }
+        reverbWet = parseFloat(Math.max(0, Math.min(1, reverbWet)).toFixed(2));
+        
+        params.reverb.wet = reverbWet;
+        document.getElementById('s-rvw').value = reverbWet;
+        document.getElementById('v-rvw').innerText = reverbWet;
+        if(reverb) reverb.wet.rampTo(reverbWet, 0.1);
+        
+        console.log(`🎨 智能预设应用: BPM=${bpm}, Scale=${params.scaleType}, Drums=${drumPreset}, Randomness=${params.randomness}`);
+    }
+
+    function initScaleButtons() {
+        const container = document.getElementById('scale-buttons-container');
+        container.innerHTML = '';
+        for (let key in SCALES) {
+            let btn = document.createElement('div');
+            btn.className = 'scale-btn';
+            btn.id = 'btn-scale-' + key;
+            btn.innerHTML = `${SCALES[key].name}`;
+            btn.onclick = () => { params.scaleType = key; updateScaleButtonsUI(); };
+            container.appendChild(btn);
+        }
+        updateScaleButtonsUI();
+    }
+    function updateScaleButtonsUI() {
+        for (let key in SCALES) {
+            let btn = document.getElementById('btn-scale-' + key);
+            btn.className = 'scale-btn'; 
+            if (params.scaleType === key) btn.classList.add('active');
+            else btn.classList.remove('active');
+            
+            if (recommendedScales.includes(key)) btn.classList.add('recommended');
+            else btn.classList.remove('recommended');
+        }
+    }
+
+    // --- 4. 音频初始化 ---
+    async function initAudio() {
+        await Tone.start();
+        
+        // === 创建全局 Limiter（防止削波和过载）===
+        limiter = new Tone.Limiter(-1).toDestination(); // -1dB 阈值
+        
+        reverb = new Tone.Reverb({ decay: 2.0, wet: params.reverb.wet }).connect(limiter);
+        await reverb.generate();
+        
+        filter2 = new Tone.Filter({
+            type: params.f2.type,
+            frequency: params.f2.freq,
+            Q: params.f2.q,
+            gain: params.f2.gain
+        }).connect(reverb);
+        
+        filter1 = new Tone.Filter({
+            type: params.f1.type,
+            frequency: params.f1.freq,
+            Q: params.f1.q,
+            gain: params.f1.gain
+        }).connect(filter2);
+
+        polySynth = new Tone.PolySynth(Tone.FMSynth);
+        polySynth.set({
+            harmonicity: params.harmonicity, 
+            modulationIndex: params.modulationIndex,
+            detune: params.detune,
+            oscillator: { type: params.oscType }, 
+            modulation: { type: params.modOscType },
+            envelope: { 
+                attack: params.amp.a, 
+                decay: params.amp.d, 
+                sustain: params.amp.s, 
+                release: params.amp.r 
+            },
+            modulationEnvelope: {
+                attack: params.modEnv.a,
+                decay: params.modEnv.d,
+                sustain: params.modEnv.s,
+                release: params.modEnv.r
+            }
+        });
+
+        polySynth.connect(filter1);
+        polySynth.maxPolyphony = 32;
+
+        // === Bass 合成器 ===
+        bassFilter = new Tone.Filter({
+            type: 'lowpass',
+            frequency: params.bass.cutoff,
+            Q: 1.0
+        }).connect(reverb);
+        
+        bassSynth = new Tone.MonoSynth({
+            oscillator: { type: 'sawtooth' },
+            envelope: { attack: 0.01, decay: 0.1, sustain: 0.3, release: 0.8 },
+            filterEnvelope: { attack: 0.01, decay: 0.2, sustain: 0.5, release: 0.8, baseFrequency: 200, octaves: 2 }
+        }).connect(bassFilter);
+        bassSynth.volume.value = Tone.gainToDb(params.bass.volume);
+
+        // === 鼓组 ===
+        // Kick (底鼓)
+        kickDrum = new Tone.MembraneSynth({
+            pitchDecay: 0.05,
+            octaves: 6,
+            oscillator: { type: 'sine' },
+            envelope: { attack: 0.001, decay: 0.4, sustain: 0.01, release: 0.4, attackCurve: 'exponential' }
+        }).connect(reverb);
+        kickDrum.volume.value = Tone.gainToDb(params.drums.kick.volume);
+
+        // Snare (军鼓)
+        snareDrum = new Tone.NoiseSynth({
+            noise: { type: 'white' },
+            envelope: { attack: 0.001, decay: 0.2, sustain: 0.0 }
+        }).connect(reverb);
+        snareDrum.volume.value = Tone.gainToDb(params.drums.snare.volume);
+
+        // Hi-hat (踩镲)
+        hihat = new Tone.MetalSynth({
+            frequency: 200,
+            envelope: { attack: 0.001, decay: 0.1, release: 0.01 },
+            harmonicity: 5.1,
+            modulationIndex: 32,
+            resonance: 4000,
+            octaves: 1.5
+        }).connect(reverb);
+        hihat.volume.value = Tone.gainToDb(params.drums.hihat.volume);
+
+        // Tom (通鼓)
+        tomDrum = new Tone.MembraneSynth({
+            pitchDecay: 0.08,
+            octaves: 4,
+            oscillator: { type: 'sine' },
+            envelope: { 
+                attack: 0.001, 
+                decay: 0.3, 
+                sustain: 0.0, 
+                release: 0.3 
+            }
+        }).connect(reverb);
+        tomDrum.volume.value = Tone.gainToDb(params.drums.tom.volume);
+
+        Tone.Transport.scheduleRepeat((time) => {
+            sequencerStep(time);
+        }, "16n");
+        Tone.Transport.bpm.value = params.bpm;
+        
+        isAudioInitialized = true;
+    }
+
+    // --- 参数更新 ---
+    function updateAudioParams(target) {
+        if(!polySynth) return;
+        
+        if (target === 'f1') {
+            if (params.f1.on) {
+                filter1.type = params.f1.type;
+                filter1.frequency.rampTo(params.f1.freq, 0.1);
+                filter1.Q.value = params.f1.q;
+                filter1.gain.value = params.f1.gain;
+            } else {
+                if(params.f1.type === 'lowpass') filter1.frequency.rampTo(20000, 0.1);
+                else if(params.f1.type === 'highpass') filter1.frequency.rampTo(0, 0.1);
+                else filter1.gain.rampTo(0, 0.1);
+            }
+        }
+        if (target === 'f2') {
+            if (params.f2.on) {
+                filter2.type = params.f2.type;
+                filter2.frequency.rampTo(params.f2.freq, 0.1);
+                filter2.Q.value = params.f2.q;
+                filter2.gain.value = params.f2.gain;
+            } else {
+                if(params.f2.type === 'lowpass') filter2.frequency.rampTo(20000, 0.1);
+                else if(params.f2.type === 'highpass') filter2.frequency.rampTo(0, 0.1);
+                else filter2.gain.rampTo(0, 0.1);
+            }
+        }
+        if (target === 'fm') {
+            polySynth.set({ 
+                harmonicity: params.harmonicity,
+                modulationIndex: params.modulationIndex,
+                detune: params.detune,
+                oscillator: { type: params.oscType },
+                modulation: { type: params.modOscType }
+            });
+        }
+        if (target === 'env') {
+            polySynth.set({ 
+                envelope: { 
+                    attack: params.amp.a, 
+                    decay: params.amp.d,
+                    sustain: params.amp.s,
+                    release: params.amp.r 
+                } 
+            });
+        }
+        if (target === 'modenv') {
+            polySynth.set({ 
+                modulationEnvelope: { 
+                    attack: params.modEnv.a, 
+                    decay: params.modEnv.d,
+                    sustain: params.modEnv.s,
+                    release: params.modEnv.r 
+                } 
+            });
+        }
+        if (target === 'bass') {
+            if (bassFilter) bassFilter.frequency.rampTo(params.bass.cutoff, 0.1);
+            if (bassSynth) bassSynth.volume.rampTo(Tone.gainToDb(params.bass.volume), 0.1);
+        }
+        if (target === 'drums') {
+            if (kickDrum) kickDrum.volume.rampTo(Tone.gainToDb(params.drums.kick.volume), 0.1);
+            if (snareDrum) snareDrum.volume.rampTo(Tone.gainToDb(params.drums.snare.volume), 0.1);
+            if (hihat) hihat.volume.rampTo(Tone.gainToDb(params.drums.hihat.volume), 0.1);
+            if (tomDrum) tomDrum.volume.rampTo(Tone.gainToDb(params.drums.tom.volume), 0.1);
+        }
+        if (target === 'reverb') {
+            reverb.wet.rampTo(params.reverb.wet, 0.1);
+        }
+        if (target === 'bpm') {
+            Tone.Transport.bpm.value = params.bpm;
+        }
+    }
+
+    // --- 鼓组预设 ---
+    const drumPresets = {
+        balanced: {
+            kick: { probability: 0.15, brightnessThreshold: 30, volume: 1.0 },
+            snare: { probability: 0.12, saturationThreshold: 40, volume: 0.8 },
+            hihat: { probability: 0.5, density: 0.5, volume: 0.6 },
+            tom: { probability: 0.08, hueRangeMin: 60, hueRangeMax: 180, volume: 0.7 }
+        },
+        aggressive: {
+            kick: { probability: 0.3, brightnessThreshold: 20, volume: 1.0 },
+            snare: { probability: 0.25, saturationThreshold: 25, volume: 0.9 },
+            hihat: { probability: 0.7, density: 0.8, volume: 0.8 },
+            tom: { probability: 0.15, hueRangeMin: 40, hueRangeMax: 200, volume: 0.9 }
+        },
+        sparse: {
+            kick: { probability: 0.08, brightnessThreshold: 50, volume: 0.9 },
+            snare: { probability: 0.06, saturationThreshold: 60, volume: 0.7 },
+            hihat: { probability: 0.3, density: 0.3, volume: 0.4 },
+            tom: { probability: 0.03, hueRangeMin: 80, hueRangeMax: 160, volume: 0.6 }
+        },
+        dense: {
+            kick: { probability: 0.4, brightnessThreshold: 15, volume: 1.0 },
+            snare: { probability: 0.35, saturationThreshold: 20, volume: 0.9 },
+            hihat: { probability: 0.8, density: 0.9, volume: 0.7 },
+            tom: { probability: 0.2, hueRangeMin: 30, hueRangeMax: 220, volume: 0.85 }
+        },
+        ambient: {
+            kick: { probability: 0.05, brightnessThreshold: 65, volume: 0.7 },
+            snare: { probability: 0.04, saturationThreshold: 70, volume: 0.5 },
+            hihat: { probability: 0.25, density: 0.4, volume: 0.3 },
+            tom: { probability: 0.02, hueRangeMin: 100, hueRangeMax: 140, volume: 0.5 }
+        }
+    };
+    
+    function applyDrumPreset(presetName) {
+        if (!drumPresets[presetName]) return;
+        
+        const preset = drumPresets[presetName];
+        
+        // Apply kick settings
+        params.drums.kick.probability = preset.kick.probability;
+        params.drums.kick.brightnessThreshold = preset.kick.brightnessThreshold;
+        params.drums.kick.volume = preset.kick.volume;
+        
+        // Apply snare settings
+        params.drums.snare.probability = preset.snare.probability;
+        params.drums.snare.saturationThreshold = preset.snare.saturationThreshold;
+        params.drums.snare.volume = preset.snare.volume;
+        
+        // Apply hihat settings
+        params.drums.hihat.probability = preset.hihat.probability;
+        params.drums.hihat.density = preset.hihat.density;
+        params.drums.hihat.volume = preset.hihat.volume;
+        
+        // Apply tom settings
+        params.drums.tom.probability = preset.tom.probability;
+        params.drums.tom.hueRangeMin = preset.tom.hueRangeMin;
+        params.drums.tom.hueRangeMax = preset.tom.hueRangeMax;
+        params.drums.tom.volume = preset.tom.volume;
+        
+        // Update UI
+        document.getElementById('s-kick-prob').value = preset.kick.probability;
+        document.getElementById('v-kick-prob').textContent = preset.kick.probability.toFixed(2);
+        document.getElementById('s-kick-thresh').value = preset.kick.brightnessThreshold;
+        document.getElementById('v-kick-thresh').textContent = preset.kick.brightnessThreshold;
+        document.getElementById('s-kick-vol').value = preset.kick.volume;
+        document.getElementById('v-kick-vol').textContent = preset.kick.volume.toFixed(2);
+        
+        document.getElementById('s-snare-prob').value = preset.snare.probability;
+        document.getElementById('v-snare-prob').textContent = preset.snare.probability.toFixed(2);
+        document.getElementById('s-snare-thresh').value = preset.snare.saturationThreshold;
+        document.getElementById('v-snare-thresh').textContent = preset.snare.saturationThreshold;
+        document.getElementById('s-snare-vol').value = preset.snare.volume;
+        document.getElementById('v-snare-vol').textContent = preset.snare.volume.toFixed(2);
+        
+        document.getElementById('s-hihat-prob').value = preset.hihat.probability;
+        document.getElementById('v-hihat-prob').textContent = preset.hihat.probability.toFixed(2);
+        document.getElementById('s-hihat-dens').value = preset.hihat.density;
+        document.getElementById('v-hihat-dens').textContent = preset.hihat.density.toFixed(2);
+        document.getElementById('s-hihat-vol').value = preset.hihat.volume;
+        document.getElementById('v-hihat-vol').textContent = preset.hihat.volume.toFixed(2);
+        
+        document.getElementById('s-tom-prob').value = preset.tom.probability;
+        document.getElementById('v-tom-prob').textContent = preset.tom.probability.toFixed(2);
+        document.getElementById('s-tom-hue-min').value = preset.tom.hueRangeMin;
+        document.getElementById('v-tom-hue-min').textContent = preset.tom.hueRangeMin;
+        document.getElementById('s-tom-hue-max').value = preset.tom.hueRangeMax;
+        document.getElementById('v-tom-hue-max').textContent = preset.tom.hueRangeMax;
+        document.getElementById('s-tom-vol').value = preset.tom.volume;
+        document.getElementById('v-tom-vol').textContent = preset.tom.volume.toFixed(2);
+        
+        // Update audio
+        updateAudioParams('drums');
+    }
+
+    // --- Custom Dropdown Logic (Fixed Z-Index) ---
+    function setupCustomDropdown(wrapperId, paramsObj, key, audioTag) {
+        const wrapper = document.getElementById(wrapperId);
+        const trigger = wrapper.querySelector('.custom-select-trigger');
+        const customSelect = wrapper.querySelector('.custom-select');
+        const options = wrapper.querySelectorAll('.custom-option');
+
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation(); 
+            document.querySelectorAll('.custom-select').forEach(s => {
+                if(s !== customSelect) {
+                    s.classList.remove('open');
+                    const otherSection = s.closest('.control-section');
+                    if(otherSection) otherSection.classList.remove('active-z');
+                }
+            });
+            
+            const isOpen = customSelect.classList.toggle('open');
+            const parentSection = wrapper.closest('.control-section');
+            if (parentSection) {
+                if (isOpen) parentSection.classList.add('active-z');
+                else parentSection.classList.remove('active-z');
+            }
+        });
+
+        options.forEach(option => {
+            option.addEventListener('click', (e) => {
+                e.stopPropagation();
+                wrapper.querySelector('.custom-option.selected')?.classList.remove('selected');
+                option.classList.add('selected');
+                trigger.textContent = option.textContent;
+                customSelect.classList.remove('open');
+                
+                const parentSection = wrapper.closest('.control-section');
+                if(parentSection) parentSection.classList.remove('active-z');
+
+                const val = option.getAttribute('data-value');
+                paramsObj[key] = val;
+                if (audioTag) updateAudioParams(audioTag);
+            });
+        });
+    }
+
+    window.addEventListener('click', (e) => {
+        let clickedInside = false;
+        document.querySelectorAll('.custom-select').forEach(select => {
+            if (select.contains(e.target)) clickedInside = true;
+        });
+        
+        if (!clickedInside) {
+            document.querySelectorAll('.custom-select').forEach(select => {
+                select.classList.remove('open');
+                const parentSection = select.closest('.control-section');
+                if(parentSection) parentSection.classList.remove('active-z');
+            });
+        }
+    });
+
+    // --- 5. UI 绑定 ---
+    function setupUI() {
+        const bind = (id, obj, key, type='float', audioTag=null) => {
+            const el = document.getElementById(id);
+            if(!el) return;
+            const disp = document.getElementById(id.replace('s-', 'v-'));
+            const isCheck = (type === 'bool');
+            
+            if(el.tagName === 'SELECT') return;
+
+            el.addEventListener(isCheck ? 'change' : 'input', (e) => {
+                let val;
+                if(isCheck) {
+                    val = e.target.checked;
+                } else if (type === 'int') {
+                    val = parseInt(e.target.value);
+                } else if (type === 'float') {
+                    val = parseFloat(e.target.value);
+                } else {
+                    val = e.target.value; 
+                }
+                
+                if(disp) {
+                    if(id === 's-dur-scale') disp.innerText = `${val} (${val}/16)`;
+                    else disp.innerText = val;
+                }
+                
+                if (key) obj[key] = val;
+                if (audioTag) updateAudioParams(audioTag);
+            });
+        };
+
+        const startBtn = document.getElementById('startBtn');
+        startBtn.addEventListener('click', async () => {
+            await initAudio(); startBtn.disabled = true; startBtn.innerText = "System Ready"; 
+            document.getElementById('uploadContainer').style.opacity = "1"; document.getElementById('uploadContainer').style.pointerEvents = "auto";
+            document.getElementById('statusText').innerText = "请上传图片";
+        });
+        document.getElementById('imgUpload').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                loadImage(ev.target.result, (loadedImg) => {
+                    img = loadedImg; analyzeAtmosphere(); analyzeImage(); 
+                    currentGridIndex = 0; ticksWaited = 0; currentNoteDuration = 0;
+                    if(!isPlaying) togglePlay();
+                });
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // Initialize Custom Dropdowns
+        setupCustomDropdown('wrapper-sel-osc', params, 'oscType', 'fm');
+        setupCustomDropdown('wrapper-sel-modosc', params, 'modOscType', 'fm');
+        setupCustomDropdown('wrapper-sel-f1-type', params.f1, 'type', 'f1');
+        setupCustomDropdown('wrapper-sel-f2-type', params.f2, 'type', 'f2');
+        
+        // Drum Preset Dropdown (special handling)
+        const drumPresetWrapper = document.getElementById('wrapper-sel-drum-preset');
+        const drumPresetTrigger = drumPresetWrapper.querySelector('.custom-select-trigger');
+        const drumPresetSelect = drumPresetWrapper.querySelector('.custom-select');
+        const drumPresetOptions = drumPresetWrapper.querySelectorAll('.custom-option');
+        
+        drumPresetTrigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.querySelectorAll('.custom-select').forEach(s => {
+                if(s !== drumPresetSelect) s.classList.remove('open');
+            });
+            drumPresetSelect.classList.toggle('open');
+        });
+        
+        drumPresetOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                const value = option.getAttribute('data-value');
+                drumPresetOptions.forEach(o => o.classList.remove('selected'));
+                option.classList.add('selected');
+                drumPresetTrigger.textContent = option.textContent;
+                drumPresetSelect.classList.remove('open');
+                applyDrumPreset(value);
+            });
+        });
+
+        // Bind Standard Controls
+        bind('s-bpm', params, 'bpm', 'int', 'bpm');
+        bind('s-dur-scale', params, 'maxDurSteps', 'int');
+        bind('s-oct', params, 'baseOctave', 'int');
+        bind('s-rand', params, 'randomness');
+        
+        // FM 参数
+        bind('s-harm', params, 'harmonicity', 'float', 'fm');
+        bind('s-modidx', params, 'modulationIndex', 'float', 'fm');
+        bind('s-mod', params, 'modScale', 'int');
+        bind('s-mod-th', params, 'modThreshold', 'int');
+        bind('s-detune', params, 'detune', 'int', 'fm');
+        
+        // Filter 1
+        bind('chk-f1-en', params.f1, 'on', 'bool', 'f1');
+        bind('s-f1-freq', params.f1, 'freq', 'int', 'f1');
+        bind('s-f1-q', params.f1, 'q', 'float', 'f1');
+        bind('s-f1-gain', params.f1, 'gain', 'int', 'f1');
+
+        // Filter 2
+        bind('chk-f2-en', params.f2, 'on', 'bool', 'f2');
+        bind('s-f2-freq', params.f2, 'freq', 'int', 'f2');
+        bind('s-f2-q', params.f2, 'q', 'float', 'f2');
+        bind('s-f2-gain', params.f2, 'gain', 'int', 'f2');
+
+        // Amp Envelope
+        bind('s-att', params.amp, 'a', 'float', 'env');
+        bind('s-dec', params.amp, 'd', 'float', 'env');
+        bind('s-sus', params.amp, 's', 'float', 'env');
+        bind('s-rel', params.amp, 'r', 'float', 'env');
+        
+        // Mod Envelope
+        bind('s-matt', params.modEnv, 'a', 'float', 'modenv');
+        bind('s-mdec', params.modEnv, 'd', 'float', 'modenv');
+        bind('s-msus', params.modEnv, 's', 'float', 'modenv');
+        bind('s-mrel', params.modEnv, 'r', 'float', 'modenv');
+        
+        // Bass Controls
+        bind('chk-bass-en', params.bass, 'enabled', 'bool');
+        bind('s-bass-pitch', params.bass, 'pitchOffset', 'int');
+        bind('s-bass-prob', params.bass, 'triggerProbability', 'float');
+        bind('s-bass-root', params.bass, 'rootEmphasis', 'float');
+        bind('s-bass-rand', params.bass, 'randomness', 'float');
+        bind('s-bass-silence', params.bass, 'silenceThreshold', 'int');
+        bind('s-bass-dur', params.bass, 'maxDurSteps', 'int');
+        bind('s-bass-cut', params.bass, 'cutoff', 'int', 'bass');
+        bind('s-bass-vol', params.bass, 'volume', 'float', 'bass');
+        
+        // Drums Controls
+        bind('chk-drums-en', params.drums, 'enabled', 'bool');
+        
+        // Kick
+        bind('s-kick-prob', params.drums.kick, 'probability', 'float');
+        bind('s-kick-thresh', params.drums.kick, 'brightnessThreshold', 'int');
+        bind('s-kick-vol', params.drums.kick, 'volume', 'float', 'drums');
+        
+        // Snare
+        bind('s-snare-prob', params.drums.snare, 'probability', 'float');
+        bind('s-snare-thresh', params.drums.snare, 'saturationThreshold', 'int');
+        bind('s-snare-vol', params.drums.snare, 'volume', 'float', 'drums');
+        
+        // Hi-hat
+        bind('s-hihat-prob', params.drums.hihat, 'probability', 'float');
+        bind('s-hihat-dens', params.drums.hihat, 'density', 'float');
+        bind('s-hihat-vol', params.drums.hihat, 'volume', 'float', 'drums');
+        
+        // Tom
+        bind('s-tom-prob', params.drums.tom, 'probability', 'float');
+        bind('s-tom-hue-min', params.drums.tom, 'hueRangeMin', 'int');
+        bind('s-tom-hue-max', params.drums.tom, 'hueRangeMax', 'int');
+        bind('chk-tom-pitch', params.drums.tom, 'pitchByHue', 'bool');
+        bind('s-tom-vol', params.drums.tom, 'volume', 'float', 'drums');
+        
+        bind('s-rvw', params.reverb, 'wet', 'float', 'reverb');
+        
+        bind('s-grid', params, 'gridSize', 'int');
+        document.getElementById('s-grid').addEventListener('input', ()=>{ if(img){analyzeImage(); currentGridIndex=0; ticksWaited=0;} });
+    }
+
+    function analyzeImage() {
+        if (!img) return;
+        gridData = [];
+        let tempImg = img.get(); tempImg.resize(width, height);
+        let sz = params.gridSize; let cellW = width / sz; let cellH = height / sz;
+        tempImg.loadPixels();
+        for (let y = 0; y < sz; y++) {
+            for (let x = 0; x < sz; x++) {
+                let px = Math.floor((x + 0.5) * cellW); let py = Math.floor((y + 0.5) * cellH);
+                let c = tempImg.get(px, py); let p5Color = color(c);
+                gridData.push({
+                    x: x * cellW, y: y * cellH, w: cellW, h: cellH,
+                    hVal: hue(p5Color), sVal: saturation(p5Color), lVal: lightness(p5Color), color: c
+                });
+            }
+        }
+    }
+
+    function sequencerStep(time) {
+        if (gridData.length === 0) return;
+
+        if (ticksWaited >= currentNoteDuration) {
+            currentGridIndex = (currentGridIndex + 1) % gridData.length;
+            let cell = gridData[currentGridIndex];
+
+            let steps = map(cell.lVal, 0, 100, 1, params.maxDurSteps);
+            steps = Math.floor(steps);
+            if (steps < 1) steps = 1;
+            
+            currentNoteDuration = steps;
+            ticksWaited = 0;
+            
+            // === 1. 主旋律 ===
+            triggerCell(cell, steps, time);
+            
+            // === 2. Bass Line ===
+            if (params.bass.enabled) {
+                triggerBass(cell, steps, time);
+            }
+            
+            // === 3. 鼓组 ===
+            if (params.drums.enabled) {
+                triggerDrums(currentGridIndex, cell, time);
+            }
+        }
+        ticksWaited++;
+    }
+
+    function triggerCell(data, steps, time) {
+        if (data.lVal < 5) return; 
+
+        let durationSeconds = Tone.Time("16n").toSeconds() * steps;
+
+        let scaleObj = SCALES[params.scaleType];
+        let notes = scaleObj.notes;
+        let scaleLen = notes.length;
+        let totalRange = scaleLen * 3; 
+        let rawIndex = map(data.hVal, 0, 360, 0, totalRange);
+        let targetIndex = Math.floor(rawIndex);
+        let randAmt = params.randomness; 
+        let jitter = 0;
+        if (randAmt > 0 && Math.random() < randAmt) {
+            if (Math.random() < (randAmt * 0.6)) jitter += (Math.random() > 0.5 ? 1 : -1) * scaleLen;
+            jitter += Math.floor(map(Math.random(), 0, 1, -2, 3));
+        }
+        let finalIndex = targetIndex + jitter;
+        let octaveOffset = Math.floor(finalIndex / scaleLen);
+        let noteIndex = finalIndex % scaleLen;
+        if (noteIndex < 0) { noteIndex += scaleLen; octaveOffset -= 1; }
+        
+        let rootNote = "C" + params.baseOctave;
+        let totalSemitones = (octaveOffset * 12) + notes[noteIndex];
+        let note = Tone.Frequency(rootNote).transpose(totalSemitones);
+
+        // 动态调制：基础值 + 饱和度驱动的额外调制
+        let dynamicMod = 0;
+        if (data.sVal > params.modThreshold) {
+            dynamicMod = map(data.sVal, params.modThreshold, 100, 0, params.modScale);
+        }
+        let finalModIndex = params.modulationIndex + dynamicMod;
+        
+        let velocity = map(data.lVal, 0, 100, 0.3, 1.0);
+        
+        polySynth.set({ modulationIndex: finalModIndex });
+        polySynth.triggerAttackRelease(note, durationSeconds, time, velocity);
+    }
+
+    // --- Bass 触发函数 ---
+    function triggerBass(data, steps, time) {
+        if (!bassSynth) return;
+        
+        // 1. 亮度阈值过滤（暗区不触发）
+        if (data.lVal < params.bass.silenceThreshold) return;
+        
+        // 2. 概率触发（制造稀疏感，避免过于密集）
+        if (Math.random() > params.bass.triggerProbability) return;
+        
+        // 3. 计算基础音高（和主旋律使用相同的算法）
+        let scaleObj = SCALES[params.scaleType];
+        let notes = scaleObj.notes;
+        let scaleLen = notes.length;
+        let totalRange = scaleLen * 3; 
+        let rawIndex = map(data.hVal, 0, 360, 0, totalRange);
+        let targetIndex = Math.floor(rawIndex);
+        
+        // 4. 应用Bass独立的随机性
+        let randAmt = params.bass.randomness; 
+        let jitter = 0;
+        if (randAmt > 0 && Math.random() < randAmt) {
+            if (Math.random() < (randAmt * 0.6)) jitter += (Math.random() > 0.5 ? 1 : -1) * scaleLen;
+            jitter += Math.floor(map(Math.random(), 0, 1, -2, 3));
+        }
+        let finalIndex = targetIndex + jitter;
+        let octaveOffset = Math.floor(finalIndex / scaleLen);
+        let noteIndex = finalIndex % scaleLen;
+        if (noteIndex < 0) { noteIndex += scaleLen; octaveOffset -= 1; }
+        
+        // 5. 根音强调（Bass的特征：倾向于演奏根音和五度音）
+        if (Math.random() < params.bass.rootEmphasis) {
+            octaveOffset = 0;  // 重置八度偏移到基准八度
+            if (Math.random() < 0.6) {
+                noteIndex = 0;  // 60%概率：根音
+            } else {
+                noteIndex = Math.min(4, scaleLen - 1);  // 40%概率：五度音
+            }
+        }
+        
+        // 6. 计算最终音符（使用主旋律的baseOctave + 半音偏移）
+        let rootNote = "C" + params.baseOctave;
+        let totalSemitones = (octaveOffset * 12) + notes[noteIndex] + params.bass.pitchOffset;
+        let note = Tone.Frequency(rootNote).transpose(totalSemitones);
+        
+        // 7. Bass独立的音符时长（使用独立的maxDurSteps）
+        let bassSteps = map(data.lVal, 0, 100, 1, params.bass.maxDurSteps);
+        bassSteps = Math.floor(bassSteps);
+        if (bassSteps < 1) bassSteps = 1;
+        let durationSeconds = Tone.Time("16n").toSeconds() * bassSteps;
+        
+        // 8. 力度变化（从阈值开始映射）
+        let velocity = map(data.lVal, params.bass.silenceThreshold, 100, 0.6, 1.0);
+        
+        bassSynth.triggerAttackRelease(note, durationSeconds, time, velocity);
+    }
+
+    // --- 鼓组概率评估函数 ---
+    function shouldTriggerKick(cell) {
+        // 亮度阈值过滤
+        if (cell.lVal < params.drums.kick.brightnessThreshold) return false;
+        
+        // 基础概率 + 高亮度增益
+        let baseProbability = params.drums.kick.probability;
+        let brightBonus = 0;
+        if (cell.lVal > 70) {
+            brightBonus = 0.5 * map(cell.lVal, 70, 100, 0, 1);
+        }
+        
+        let finalProbability = baseProbability + brightBonus;
+        return Math.random() < finalProbability;
+    }
+    
+    function shouldTriggerSnare(cell) {
+        // 饱和度阈值过滤
+        if (cell.sVal < params.drums.snare.saturationThreshold) return false;
+        
+        // 基础概率 + 高饱和度增益
+        let baseProbability = params.drums.snare.probability;
+        let satBonus = 0;
+        if (cell.sVal > 60) {
+            satBonus = 0.6 * map(cell.sVal, 60, 100, 0, 1);
+        }
+        
+        let finalProbability = baseProbability + satBonus;
+        return Math.random() < finalProbability;
+    }
+    
+    function shouldTriggerHihat(cell) {
+        // 概率受density参数影响
+        let adjustedProb = params.drums.hihat.probability * params.drums.hihat.density;
+        return Math.random() < adjustedProb;
+    }
+    
+    function shouldTriggerTom(cell) {
+        // 特定色相范围触发
+        let minHue = params.drums.tom.hueRangeMin;
+        let maxHue = params.drums.tom.hueRangeMax;
+        
+        // 色相不在范围内：不触发
+        if (cell.hVal < minHue || cell.hVal > maxHue) return false;
+        
+        // 在范围内：按概率触发
+        return Math.random() < params.drums.tom.probability;
+    }
+    
+    // --- 鼓组触发函数 ---
+    function triggerDrums(index, cell, time) {
+        if (!kickDrum || !snareDrum || !hihat || !tomDrum) return;
+        
+        // === KICK（底鼓）===
+        if (shouldTriggerKick(cell)) {
+            let velocity = map(cell.lVal, params.drums.kick.brightnessThreshold, 100, 0.6, 1.0);
+            kickDrum.triggerAttackRelease("C1", "8n", time, velocity);
+        }
+        
+        // === SNARE（军鼓）===
+        if (shouldTriggerSnare(cell)) {
+            let velocity = map(cell.sVal, params.drums.snare.saturationThreshold, 100, 0.5, 0.9);
+            snareDrum.triggerAttackRelease("16n", time, velocity);
+        }
+        
+        // === HI-HAT（踩镲）===
+        if (shouldTriggerHihat(cell)) {
+            // 饱和度控制开合度
+            let openness = cell.sVal / 100;
+            let decay = map(openness, 0, 1, 0.03, 0.2);
+            hihat.envelope.decay = decay;
+            
+            // 亮度控制力度
+            let velocity = map(cell.lVal, 0, 100, 0.2, 0.5);
+            hihat.triggerAttackRelease("32n", time, velocity);
+        }
+        
+        // === TOM（通鼓）===
+        if (shouldTriggerTom(cell)) {
+            // 色相控制Tom音高
+            let pitch = "C2";
+            if (params.drums.tom.pitchByHue) {
+                let pitchMap = ["C2", "D2", "E2", "G2", "A2"];
+                let hueNorm = map(cell.hVal, 
+                                params.drums.tom.hueRangeMin, 
+                                params.drums.tom.hueRangeMax, 
+                                0, pitchMap.length - 1);
+                let pitchIndex = Math.floor(hueNorm);
+                pitchIndex = Math.max(0, Math.min(pitchMap.length - 1, pitchIndex));
+                pitch = pitchMap[pitchIndex];
+            }
+            
+            let velocity = map(cell.lVal, 0, 100, 0.6, 1.0);
+            tomDrum.triggerAttackRelease(pitch, "8n", time, velocity);
+        }
+    }
+
+    function draw() {
+        background(20);
+        if (img && gridData.length > 0) {
+            for (let i = 0; i < gridData.length; i++) {
+                let cell = gridData[i]; fill(cell.color); rect(cell.x, cell.y, cell.w, cell.h);
+            }
+            if (isAudioInitialized) {
+                let activeCell = gridData[currentGridIndex];
+                if (activeCell) { 
+                    noFill(); stroke(255); strokeWeight(3); 
+                    if (activeCell.lVal < 5) stroke(100); 
+                    else stroke(255);
+                    rect(activeCell.x, activeCell.y, activeCell.w, activeCell.h); noStroke(); 
+                }
+            }
+        } else { fill(100); textAlign(CENTER); text("UPLOAD IMAGE", width/2, height/2); }
+    }
+</script>
+</body>
+</html>

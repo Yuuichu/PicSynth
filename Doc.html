@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PicSynth - 使用教程</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            line-height: 1.8;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        h1 {
+            color: #2196F3;
+            border-bottom: 3px solid #2196F3;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #1976D2;
+            margin-top: 30px;
+            border-left: 4px solid #2196F3;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #555;
+            margin-top: 20px;
+        }
+        code {
+            background-color: #e8e8e8;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Consolas', monospace;
+        }
+        pre {
+            background-color: #263238;
+            color: #aed581;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            line-height: 1.5;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #2196F3;
+            color: white;
+            font-weight: 600;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .tip {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .warning {
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        ul, ol {
+            padding-left: 30px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        .back-link {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #2196F3;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transition: background-color 0.3s;
+        }
+        .back-link:hover {
+            background-color: #1976D2;
+        }
+        .section {
+            background-color: white;
+            padding: 25px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        hr {
+            border: none;
+            border-top: 2px solid #e0e0e0;
+            margin: 30px 0;
+        }
+        .color-tag {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            margin-right: 5px;
+            vertical-align: middle;
+        }
+        .tag-rhythm { background-color: #E91E63; }
+        .tag-pitch { background-color: #9C27B0; }
+        .tag-fm { background-color: #FF9800; }
+        .tag-filter { background-color: #2196F3; }
+        .tag-env { background-color: #4CAF50; }
+        .tag-bass { background-color: #00BCD4; }
+        .tag-drums { background-color: #FFC107; }
+    </style>
+</head>
+<body>
+    <a href="PicSynth.html" class="back-link">← 返回应用</a>
+
+    <h1>🎨 PicSynth - 图像音乐合成器使用教程</h1>
+
+    <div class="section">
+        <h2>📖 简介</h2>
+        <p><strong>PicSynth</strong> 是一个创新的音频视觉转换工具，能够将任意图片转换为音乐。通过分析图片的颜色、亮度和饱和度，自动生成包含旋律、低音线和鼓组的完整音乐作品。</p>
+        <p>系统会根据上传图片的整体氛围（色调、明暗、饱和度等）自动推荐合适的音阶，并智能调整 BPM、随机性、鼓组预设等参数。</p>
+    </div>
+
+    <div class="section">
+        <h2>🚀 快速开始</h2>
+        
+        <h3>第一步：启动系统</h3>
+        <ol>
+            <li>打开 <code>PicSynth.html</code> 文件（在浏览器中打开）</li>
+            <li>点击 <strong>"启动音序器 (Initialize)"</strong> 按钮</li>
+            <li>等待音频引擎初始化完成（按钮会变灰并显示 "System Ready"）</li>
+        </ol>
+
+        <h3>第二步：上传图片</h3>
+        <ol>
+            <li>点击 <strong>"选择文件"</strong> 按钮</li>
+            <li>选择一张图片（支持 JPG, PNG, GIF, WebP 等格式）</li>
+            <li>系统自动分析图片氛围并推荐参数</li>
+            <li>图片会自动开始播放音乐</li>
+        </ol>
+
+        <h3>控制播放</h3>
+        <ul>
+            <li><strong>暂停/继续</strong>：点击右侧画布上的图像</li>
+            <li><strong>状态显示</strong>：底部会显示当前播放状态（PLAYING / PAUSED）</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🎵 图像到音乐的映射规则</h2>
+        
+        <h3>主旋律（FM Synth）</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>图像特征</th>
+                    <th>映射到</th>
+                    <th>效果</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>色相 (Hue)</td>
+                    <td>音高</td>
+                    <td>0°-360° 映射到音阶的多个八度</td>
+                </tr>
+                <tr>
+                    <td>饱和度 (Saturation)</td>
+                    <td>FM 调制深度</td>
+                    <td>高饱和度 = 更丰富的谐波</td>
+                </tr>
+                <tr>
+                    <td>亮度 (Lightness)</td>
+                    <td>音量 + 时长</td>
+                    <td>亮 = 响且长；暗 = 轻且短</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Bass Line（低音线）</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>图像特征</th>
+                    <th>映射到</th>
+                    <th>效果</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>色相</td>
+                    <td>音高选择</td>
+                    <td>跟随主旋律音阶</td>
+                </tr>
+                <tr>
+                    <td>亮度</td>
+                    <td>音符长度 + 力度</td>
+                    <td>亮度决定触发和时长</td>
+                </tr>
+                <tr>
+                    <td>亮度 < 阈值</td>
+                    <td>静音</td>
+                    <td>暗区产生休止符</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>鼓组 (Drums)</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>乐器</th>
+                    <th>触发条件</th>
+                    <th>动态控制</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Kick（底鼓）</td>
+                    <td>亮度 > 阈值</td>
+                    <td>力度由亮度控制</td>
+                </tr>
+                <tr>
+                    <td>Snare（军鼓）</td>
+                    <td>饱和度 > 阈值</td>
+                    <td>力度由饱和度控制</td>
+                </tr>
+                <tr>
+                    <td>Hi-hat（踩镲）</td>
+                    <td>概率触发</td>
+                    <td>开合度由饱和度控制</td>
+                </tr>
+                <tr>
+                    <td>Tom（通鼓）</td>
+                    <td>特定色相范围</td>
+                    <td>音高由色相控制（可选）</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🎛️ 控制面板详解</h2>
+
+        <h3><span class="color-tag tag-rhythm"></span>Rhythm & Sequencer（节奏与音序器）</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>参数</th>
+                    <th>范围</th>
+                    <th>说明</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>BPM</td>
+                    <td>40-300</td>
+                    <td>控制音乐速度，数值越大越快</td>
+                </tr>
+                <tr>
+                    <td>Note Duration Scale</td>
+                    <td>1-16</td>
+                    <td>音符最大长度（以 1/16 音符为单位）</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Global Settings（全局设置）</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>参数</th>
+                    <th>范围</th>
+                    <th>说明</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Grid Size</td>
+                    <td>4-64</td>
+                    <td>图像网格分辨率，越大细节越多但更碎片化</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3><span class="color-tag tag-pitch"></span>Pitch & Scale（音高与音阶）</h3>
+        <div class="info">
+            <strong>💡 提示：</strong>带星标 ★ 的音阶是系统根据图片氛围自动推荐的
+        </div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>类别</th>
+                    <th>音阶</th>
+                    <th>特点</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td rowspan="3">基础</td>
+                    <td>Pentatonic (五声)</td>
+                    <td>通用，永不出错 ⭐推荐新手</td>
+                </tr>
+                <tr>
+                    <td>Major (大调)</td>
+                    <td>快乐、明亮</td>
+                </tr>
+                <tr>
+                    <td>Minor (小调)</td>
+                    <td>悲伤、忧郁</td>
+                </tr>
+                <tr>
+                    <td rowspan="5">调式</td>
+                    <td>Dorian (多利亚)</td>
+                    <td>爵士、冷静</td>
+                </tr>
+                <tr>
+                    <td>Phrygian (弗里吉亚)</td>
+                    <td>西班牙风格、神秘</td>
+                </tr>
+                <tr>
+                    <td>Lydian (利底亚)</td>
+                    <td>梦幻、漂浮</td>
+                </tr>
+                <tr>
+                    <td>Mixolydian (混合利底亚)</td>
+                    <td>摇滚、蓝调</td>
+                </tr>
+                <tr>
+                    <td>Locrian (洛克里亚)</td>
+                    <td>不稳定、紧张</td>
+                </tr>
+                <tr>
+                    <td rowspan="2">特殊小调</td>
+                    <td>Harmonic Minor (和声小调)</td>
+                    <td>古典、戏剧性</td>
+                </tr>
+                <tr>
+                    <td>Melodic Minor (旋律小调)</td>
+                    <td>爵士融合</td>
+                </tr>
+                <tr>
+                    <td rowspan="3">东方/异域</td>
+                    <td>Japanese (日本)</td>
+                    <td>东方禅意</td>
+                </tr>
+                <tr>
+                    <td>Arabic (阿拉伯)</td>
+                    <td>中东风情</td>
+                </tr>
+                <tr>
+                    <td>Gypsy (吉普赛)</td>
+                    <td>激情、狂野</td>
+                </tr>
+                <tr>
+                    <td rowspan="3">现代</td>
+                    <td>Blues (布鲁斯)</td>
+                    <td>忧伤、灵魂</td>
+                </tr>
+                <tr>
+                    <td>Whole Tone (全音)</td>
+                    <td>印象派、梦幻</td>
+                </tr>
+                <tr>
+                    <td>Chromatic (半音)</td>
+                    <td>无调性、实验</td>
+                </tr>
+                <tr>
+                    <td rowspan="2">五声变体</td>
+                    <td>Minor Pentatonic (小调五声)</td>
+                    <td>蓝调摇滚</td>
+                </tr>
+                <tr>
+                    <td>Egyptian (埃及)</td>
+                    <td>古老神秘</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>参数</th>
+                    <th>范围</th>
+                    <th>说明</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Base Octave</td>
+                    <td>2-6</td>
+                    <td>基准八度，数字越大音越高</td>
+                </tr>
+                <tr>
+                    <td>Randomness (Humanize)</td>
+                    <td>0-1.0</td>
+                    <td>音高随机偏移量，增加人性化感觉</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3><span class="color-tag tag-fm"></span>FM Synthesis Core（FM合成核心）</h3>
+        
+        <h4>振荡器 (Oscillators)</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>参数</th>
+                    <th>选项</th>
+                    <th>说明</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Carrier Oscillator</td>
+                    <td>Sine / Triangle / Square / Sawtooth / PWM / Super Saw</td>
+                    <td>载波振荡器波形，决定基础音色</td>
+                </tr>
+                <tr>
+                    <td>Modulator Oscillator</td>
+                    <td>Sine / Triangle / Square / Sawtooth</td>
+                    <td>调制波振荡器，影响谐波特性</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>FM 参数</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>参数</th>
+                    <th>范围</th>
+                    <th>说明</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Harmonicity (谐波比)</td>
+                    <td>0.1-10.0</td>
+                    <td>调制器与载波频率比，整数 = 和谐，非整数 = 金属感</td>
+                </tr>
+                <tr>
+                    <td>Base Mod Index (基础调制)</td>
+                    <td>0-50</td>
+                    <td>FM 调制深度基础值</td>
+                </tr>
+                <tr>
+                    <td>Mod Scale (动态范围)</td>
+                    <td>0-200</td>
+                    <td>饱和度驱动的额外调制量</td>
+                </tr>
+                <tr>
+                    <td>Mod Threshold (阈值)</td>
+                    <td>0-100</td>
+                    <td>饱和度超过此值才增加调制</td>
+                </tr>
+                <tr>
+                    <td>Detune (失谐)</td>
+                    <td>-100 ~ +100 cents</td>
+                    <td>微调音高，制造合唱/失谐效果</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>调制包络 (Modulation Envelope)</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>参数</th>
+                    <th>范围</th>
+                    <th>说明</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Attack</td>
+                    <td>0.001-2.0s</td>
+                    <td>调制达到峰值的时间</td>
+                </tr>
+                <tr>
+                    <td>Decay</td>
+                    <td>0.01-2.0s</td>
+                    <td>调制从峰值下降的时间</td>
+                </tr>
+                <tr>
+                    <td>Sustain</td>
+                    <td>0-1.0</td>
+                    <td>调制持续电平</td>
+                </tr>
+                <tr>
+                    <td>Release</td>
+                    <td>0.1-5.0s</td>
+                    <td>调制释放时间</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3><span class="color-tag tag-filter"></span>Filters & EQ（滤波器与均衡）</h3>
+        
+        <h4>Filter A - 主塑形滤波器</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>参数</th>
+                    <th>范围/选项</th>
+                    <th>说明</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Enable</td>
+                    <td>开/关</td>
+                    <td>启用/禁用滤波器</td>
+                </tr>
+                <tr>
+                    <td>Type</td>
+                    <td>Lowpass / Highpass / Peaking / Notch</td>
+                    <td>滤波器类型</td>
+                </tr>
+                <tr>
+                    <td>Freq</td>
+                    <td>50-10000 Hz</td>
+                    <td>截止/中心频率</td>
+                </tr>
+                <tr>
+                    <td>Q (Resonance)</td>
+                    <td>0.1-20.0</td>
+                    <td>共振/带宽</td>
+                </tr>
+                <tr>
+                    <td>Gain</td>
+                    <td>-24 ~ +24 dB</td>
+                    <td>增益（仅对 Peaking 有效）</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Filter B - 辅助均衡</h4>
+        <p>参数与 Filter A 类似，额外支持 Lowshelf 和 Highshelf 类型。</p>
+
+        <h3><span class="color-tag tag-env"></span>Amp Envelope（振幅包络）</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>参数</th>
+                    <th>范围</th>
+                    <th>说明</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Attack</td>
+                    <td>0.001-2.0s</td>
+                    <td>音量上升时间（短 = 打击感，长 = 柔和）</td>
+                </tr>
+                <tr>
+                    <td>Decay</td>
+                    <td>0.01-1.0s</td>
+                    <td>从峰值衰减时间</td>
+                </tr>
+                <tr>
+                    <td>Sustain</td>
+                    <td>0-1.0</td>
+                    <td>持续音量电平</td>
+                </tr>
+                <tr>
+                    <td>Release</td>
+                    <td>0.1-5.0s</td>
+                    <td>松键后衰减时间</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Effects（效果器）</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>参数</th>
+                    <th>范围</th>
+                    <th>说明</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Reverb Wet</td>
+                    <td>0-1.0</td>
+                    <td>混响干湿比，越大空间感越强</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3><span class="color-tag tag-bass"></span>Bass Line（低音线）</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>参数</th>
+                    <th>范围</th>
+                    <th>说明</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Enable</td>
+                    <td>开/关</td>
+                    <td>启用/禁用 Bass</td>
+                </tr>
+                <tr>
+                    <td>Pitch Offset</td>
+                    <td>-36 ~ -12 半音</td>
+                    <td>相对主旋律的音高偏移（-3 到 -1 个八度）</td>
+                </tr>
+                <tr>
+                    <td>Trigger Probability</td>
+                    <td>0-1.0</td>
+                    <td>每步触发 Bass 的概率</td>
+                </tr>
+                <tr>
+                    <td>Root Emphasis</td>
+                    <td>0-1.0</td>
+                    <td>根音倾向（0 = 自由，1 = 只弹根音/五度）</td>
+                </tr>
+                <tr>
+                    <td>Randomness</td>
+                    <td>0-1.0</td>
+                    <td>Bass 独立的音高随机性</td>
+                </tr>
+                <tr>
+                    <td>Silence Threshold</td>
+                    <td>0-50</td>
+                    <td>亮度低于此值时 Bass 静音</td>
+                </tr>
+                <tr>
+                    <td>Note Duration Scale</td>
+                    <td>1-8</td>
+                    <td>Bass 音符最大长度</td>
+                </tr>
+                <tr>
+                    <td>Filter Cutoff</td>
+                    <td>200-2000 Hz</td>
+                    <td>低通滤波器截止频率</td>
+                </tr>
+                <tr>
+                    <td>Volume</td>
+                    <td>0-1.0</td>
+                    <td>Bass 音量</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3><span class="color-tag tag-drums"></span>Drum Machine（鼓组）</h3>
+        
+        <h4>预设 (Presets)</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>预设名</th>
+                    <th>特点</th>
+                    <th>适用场景</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Balanced</td>
+                    <td>平衡的触发概率</td>
+                    <td>通用</td>
+                </tr>
+                <tr>
+                    <td>Aggressive</td>
+                    <td>高概率、大动态</td>
+                    <td>摇滚、电子</td>
+                </tr>
+                <tr>
+                    <td>Sparse</td>
+                    <td>低概率、留白多</td>
+                    <td>极简、实验</td>
+                </tr>
+                <tr>
+                    <td>Dense</td>
+                    <td>高密度触发</td>
+                    <td>舞曲、Drum & Bass</td>
+                </tr>
+                <tr>
+                    <td>Ambient</td>
+                    <td>极低概率、轻音量</td>
+                    <td>环境音乐、冥想</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Kick（底鼓）参数</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>参数</th>
+                    <th>说明</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Probability</td>
+                    <td>基础触发概率</td>
+                </tr>
+                <tr>
+                    <td>Brightness Threshold</td>
+                    <td>亮度高于此值才触发</td>
+                </tr>
+                <tr>
+                    <td>Volume</td>
+                    <td>底鼓音量</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Snare（军鼓）参数</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>参数</th>
+                    <th>说明</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Probability</td>
+                    <td>基础触发概率</td>
+                </tr>
+                <tr>
+                    <td>Saturation Threshold</td>
+                    <td>饱和度高于此值才触发</td>
+                </tr>
+                <tr>
+                    <td>Volume</td>
+                    <td>军鼓音量</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Hi-hat（踩镲）参数</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>参数</th>
+                    <th>说明</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Probability</td>
+                    <td>基础触发概率</td>
+                </tr>
+                <tr>
+                    <td>Density</td>
+                    <td>密度调节（与概率相乘）</td>
+                </tr>
+                <tr>
+                    <td>Volume</td>
+                    <td>踩镲音量</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Tom（通鼓）参数</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>参数</th>
+                    <th>说明</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Probability</td>
+                    <td>基础触发概率</td>
+                </tr>
+                <tr>
+                    <td>Hue Range Min/Max</td>
+                    <td>只在此色相范围内触发</td>
+                </tr>
+                <tr>
+                    <td>Pitch by Hue</td>
+                    <td>是否用色相控制音高</td>
+                </tr>
+                <tr>
+                    <td>Volume</td>
+                    <td>通鼓音量</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🎨 智能预设系统</h2>
+        <p>上传图片后，系统会自动分析以下特征并智能调整参数：</p>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>图像特征</th>
+                    <th>自动调整</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>整体亮度</td>
+                    <td>BPM（暗 = 慢，亮 = 快）、Bass 触发概率</td>
+                </tr>
+                <tr>
+                    <td>对比度</td>
+                    <td>音符时长、BPM 加成</td>
+                </tr>
+                <tr>
+                    <td>平均饱和度</td>
+                    <td>Randomness、Reverb Wet</td>
+                </tr>
+                <tr>
+                    <td>主色调</td>
+                    <td>推荐音阶、氛围分析</td>
+                </tr>
+                <tr>
+                    <td>色相多样性</td>
+                    <td>Randomness、鼓组预设</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="info">
+            <strong>氛围分析示例：</strong>
+            <ul>
+                <li><strong>黑暗/压抑</strong>：推荐 Minor、Harmonic Minor、Phrygian</li>
+                <li><strong>温暖/活力</strong>：推荐 Major、Pentatonic、Lydian</li>
+                <li><strong>冷静/忧郁</strong>：推荐 Minor、Dorian、Blues</li>
+                <li><strong>梦幻/神秘</strong>：推荐 Whole Tone、Lydian、Gypsy</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🎹 推荐使用场景</h2>
+
+        <h3>场景 1：电子舞曲 (EDM)</h3>
+        <pre>BPM: 128-140
+音阶: Pentatonic / Major
+Drums Preset: Dense / Aggressive
+Bass Trigger Probability: 0.8
+Hi-hat Density: 0.8-1.0</pre>
+
+        <h3>场景 2：环境音乐 (Ambient)</h3>
+        <pre>BPM: 60-80
+音阶: Lydian / Whole Tone
+Drums Preset: Ambient
+Bass Trigger Probability: 0.3
+Randomness: 0.2
+Reverb Wet: 0.6-0.8</pre>
+
+        <h3>场景 3：实验/噪音</h3>
+        <pre>BPM: 180-240
+音阶: Chromatic / Locrian
+Drums Preset: Aggressive
+Mod Scale: 150-200
+Harmonicity: 7.3
+Randomness: 0.8-1.0</pre>
+
+        <h3>场景 4：爵士/布鲁斯</h3>
+        <pre>BPM: 90-120
+音阶: Blues / Dorian
+Drums Preset: Balanced / Sparse
+Bass Root Emphasis: 0.6
+Randomness: 0.4</pre>
+
+        <h3>场景 5：东方/冥想</h3>
+        <pre>BPM: 50-70
+音阶: Japanese / Egyptian
+Drums Preset: Ambient (或关闭)
+Bass Trigger Probability: 0.4
+Reverb Wet: 0.5-0.7
+Attack: 0.3-0.5s</pre>
+    </div>
+
+    <div class="section">
+        <h2>💡 使用技巧</h2>
+
+        <h3>选择合适的图片</h3>
+        <div class="success">
+            <strong>✅ 适合的图片：</strong>
+            <ul>
+                <li>颜色丰富、对比鲜明</li>
+                <li>有渐变和过渡</li>
+                <li>抽象画、风景照</li>
+                <li>光影变化明显</li>
+                <li>艺术作品、摄影作品</li>
+            </ul>
+        </div>
+
+        <div class="warning">
+            <strong>❌ 不太适合的图片：</strong>
+            <ul>
+                <li>纯色或颜色单一</li>
+                <li>过暗或过亮（接近全黑/全白）</li>
+                <li>纹理过于密集或均匀</li>
+                <li>文字、图标等几何图形</li>
+            </ul>
+        </div>
+
+        <h3>常见问题解决</h3>
+        
+        <div class="tip">
+            <strong>🎵 音乐太混乱？</strong>
+            <ul>
+                <li>降低 Randomness</li>
+                <li>使用 Pentatonic 或 Major 音阶</li>
+                <li>减小 Grid Size（如 8-12）</li>
+                <li>降低 Mod Scale</li>
+            </ul>
+        </div>
+
+        <div class="tip">
+            <strong>🎵 音乐太单调？</strong>
+            <ul>
+                <li>增加 Randomness</li>
+                <li>增大 Mod Scale</li>
+                <li>尝试不同音阶</li>
+                <li>增大 Grid Size（如 24-32）</li>
+            </ul>
+        </div>
+
+        <div class="tip">
+            <strong>🥁 节奏不明显？</strong>
+            <ul>
+                <li>确保 Drums Enable 已开启</li>
+                <li>使用 Aggressive 或 Dense 预设</li>
+                <li>增大各鼓的 Volume</li>
+                <li>降低各鼓的 Threshold</li>
+            </ul>
+        </div>
+
+        <div class="tip">
+            <strong>🔊 声音太刺耳？</strong>
+            <ul>
+                <li>降低 Base Mod Index</li>
+                <li>启用 Lowpass Filter（Filter A）</li>
+                <li>降低 Filter Freq 和 Q 值</li>
+                <li>使用 Sine 振荡器</li>
+            </ul>
+        </div>
+
+        <div class="tip">
+            <strong>🎸 Bass 听不见？</strong>
+            <ul>
+                <li>确保 Bass Enable 已开启</li>
+                <li>增大 Bass Volume</li>
+                <li>降低 Silence Threshold</li>
+                <li>增大 Trigger Probability</li>
+                <li>增大 Filter Cutoff</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>📝 常见问题 (FAQ)</h2>
+
+        <h3>Q: 为什么点击"启动音序器"没有反应？</h3>
+        <p><strong>A:</strong> 现代浏览器需要用户交互才能启动音频。确保页面已完全加载，然后点击按钮。如果仍无反应，请尝试刷新页面。</p>
+
+        <h3>Q: 上传图片后没有声音？</h3>
+        <p><strong>A:</strong> 检查系统音量、浏览器标签页是否静音。确保已点击"启动音序器"按钮。</p>
+
+        <h3>Q: 可以保存生成的音乐吗？</h3>
+        <p><strong>A:</strong> 目前版本不支持导出，但你可以使用录屏软件或音频录制软件（如 OBS、Audacity）捕获。</p>
+
+        <h3>Q: 为什么有些颜色没有发声？</h3>
+        <p><strong>A:</strong> 如果像素的亮度小于 5，会被视为休止符不触发声音。这是设计特性，让暗区产生静默。</p>
+
+        <h3>Q: 如何重置所有参数？</h3>
+        <p><strong>A:</strong> 刷新页面即可恢复默认设置。上传新图片也会触发智能预设重新应用。</p>
+
+        <h3>Q: 推荐的音阶不好听怎么办？</h3>
+        <p><strong>A:</strong> 推荐只是参考，你可以点击任意音阶按钮手动切换。Pentatonic（五声）是最安全的选择。</p>
+    </div>
+
+    <div class="section">
+        <h2>🔧 技术信息</h2>
+        
+        <h3>使用的技术</h3>
+        <ul>
+            <li><strong>p5.js 1.6.0</strong>: 图像处理和可视化</li>
+            <li><strong>Tone.js 14.8.49</strong>: 音频合成和处理</li>
+            <li><strong>Web Audio API</strong>: 底层音频引擎</li>
+        </ul>
+
+        <h3>浏览器兼容性</h3>
+        <ul>
+            <li>✅ Chrome 80+（推荐）</li>
+            <li>✅ Firefox 75+</li>
+            <li>✅ Edge 80+</li>
+            <li>✅ Safari 14+</li>
+        </ul>
+
+        <h3>性能优化建议</h3>
+        <ul>
+            <li>较大的 Grid Size（>32）会增加计算量</li>
+            <li>建议图片尺寸不超过 2000×2000 像素</li>
+            <li>同时开启所有轨道（旋律+Bass+鼓组）会增加 CPU 负载</li>
+            <li>如遇卡顿，可尝试降低 Grid Size 或关闭部分轨道</li>
+        </ul>
+    </div>
+
+    <div style="text-align: center; margin: 40px 0; padding: 20px; background-color: #e3f2fd; border-radius: 8px;">
+        <h2 style="color: #1976D2;">🎨 → 🎵</h2>
+        <p style="font-size: 1.2rem; color: #555;">享受从图像到音乐的奇妙旅程！</p>
+        <a href="PicSynth.html" style="display: inline-block; margin-top: 15px; padding: 12px 30px; background-color: #2196F3; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">返回应用</a>
+    </div>
+
+</body>
+</html>
+
