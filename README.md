@@ -22,7 +22,7 @@
 
 ## Quick Start
 
-1. Open `PicSynth.html` in a modern browser
+1. Open `index.html` in a modern browser (or visit the GitHub Pages site)
 2. Click **"Initialize"** to start the audio engine
 3. Upload an image using the file selector
 4. Music plays automatically! Click the canvas to pause/resume
@@ -84,7 +84,7 @@ When you upload an image, PicSynth analyzes:
 
 ```
 PicSynth/
-├── PicSynth.html    # Main application
+├── index.html       # Main application
 ├── Doc.html         # User guide (Chinese)
 ├── README.md        # This file
 └── LICENSE          # MIT License
@@ -122,7 +122,7 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## 快速开始
 
-1. 在浏览器中打开 `PicSynth.html`
+1. 在浏览器中打开 `index.html`（或访问 GitHub Pages 网站）
 2. 点击 **"启动音序器 (Initialize)"** 启动音频引擎
 3. 使用文件选择器上传图片
 4. 音乐自动播放！点击画布可暂停/继续
@@ -184,7 +184,7 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ```
 PicSynth/
-├── PicSynth.html    # 主应用程序
+├── index.html       # 主应用程序
 ├── Doc.html         # 使用教程（中文详细版）
 ├── README.md        # 本文件
 └── LICENSE          # MIT 许可证
